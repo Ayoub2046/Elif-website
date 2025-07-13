@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admissions | Al-Qalam Pss</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <style>
+        /* Internal CSS for this page */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa; /* Light gray background */
+        }
+
+        /* --- Classic Navigation Bar Style --- */
+        .navbar-classic {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 1rem 0;
+        }
+        .navbar-classic .navbar-nav .nav-link {
+            color: #555;
+            font-size: 1rem;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+            margin: 0 0.25rem;
+            transition: color 0.2s ease-in-out;
+        }
+        .navbar-classic .navbar-nav .nav-link:hover {
+            color: #0d6efd; /* Bootstrap primary blue on hover */
+        }
+        .navbar-classic .navbar-nav .nav-link.active {
+            color: #000;
+            font-weight: 700;
+        }
+        
+        /* General page styling */
+        .page-header {
+            background-color: #e9ecef;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+        }
+        .content-card {
+            background-color: white;
+            border: none;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+        }
+        .list-group-item {
+            border-left: 4px solid #0d6efd;
+            margin-bottom: 10px;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Classic Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-classic">
+        <div class="container">
+            <!-- You can add a brand/logo here if you want -->
+            <!-- <a class="navbar-brand" href="#">Springfield</a> -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavClassic">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavClassic">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="academics.html">Academics</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="admissions.html">Admissions</a></li>
+                    <li class="nav-item"><a class="nav-link" href="news.html">News & Events</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header text-center">
+        <div class="container">
+            <h1 class="display-4">Admissions Process</h1>
+            <p class="lead">Begin your journey at Springfield Academy.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="card content-card">
+            <div class="card-body p-5">
+                <div class="row">
+                    <div class="col-lg-8">
+                        <h3 class="mb-4">How to Apply</h3>
+                        <p>We welcome applications from students who are eager to learn and contribute to our vibrant school community. Our admissions process is designed to be thorough and thoughtful, ensuring a good fit for both the student and the school.</p>
+                        
+                        <h4 class="mt-5">Application Steps</h4>
+                        <ol class="list-group list-group-numbered list-group-flush mt-3">
+                            <li class="list-group-item">
+                                <strong>Submit Online Application:</strong> Complete and submit our online application form along with the non-refundable application fee.
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Document Submission:</strong> Provide copies of previous school transcripts, report cards, and any standardized test scores.
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Student Assessment:</strong> Prospective students will be invited to participate in an age-appropriate assessment to gauge academic readiness.
+                            </li>
+                            <li class="list-group-item">
+                                <strong>Family Interview:</strong> We conduct a friendly interview with the student and parents/guardians to get to know you better.
+                            </li>
+                        </ol>
+                    </div>
+                    <div class="col-lg-4">
+                        <div class="bg-light p-4 rounded">
+                            <h4 class="mb-3">Important Dates</h4>
+                            <ul class="list-unstyled">
+                                <li class="mb-2"><strong>Applications Open:</strong> October 1st</li>
+                                <li class="mb-2"><strong>Application Deadline:</strong> January 31st</li>
+                                <li class="mb-2"><strong>Decision Notification:</strong> March 15th</li>
+                            </ul>
+                            <hr>
+                            <a href="#" class="btn btn-primary w-100 mt-2"><i class="fas fa-file-alt me-2"></i>Apply Now</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container text-center">
+            <p>© 2024 Springfield Academy. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Simple script to ensure the active class is correctly set on page load, 
+        // even if the user navigates directly.
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.navbar-classic .nav-link');
+            const currentPage = window.location.pathname.split('/').pop();
+            
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

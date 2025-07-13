@@ -1,0 +1,229 @@
+/* css/style.css */
+
+/* --- Google Font --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+
+/* --- Global Variables & Styles --- */
+:root {
+    --primary-color: #003366; /* Deep Blue */
+    --secondary-color: #f0ad4e; /* Gold/Yellow */
+    --light-gray: #f8f9fa;
+    --dark-gray: #343a40;
+    --text-color: #555;
+}
+
+
+
+
+
+
+
+
+
+
+
+body {
+    font-family: 'Poppins', sans-serif;
+    color: var(--text-color);
+    line-height: 1.7;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    color: var(--primary-color);
+    font-weight: 600;
+}
+
+.btn-primary {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+.btn-primary:hover {
+    background-color: #002244;
+    border-color: #002244;
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+    color: #fff;
+}
+.btn-secondary:hover {
+    background-color: #d89633;
+    border-color: #d89633;
+}
+
+/* --- Navbar --- */
+.navbar-brand {
+    font-weight: 700;
+    font-size: 1.5rem;
+}
+.navbar {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+/* --- Hero Section --- */
+/* .hero-section {
+    background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/images/image\ copy.png') no-repeat center center;
+    background-size: cover;
+    color: white;
+    padding: 120px 0;
+    text-align: center;
+} */
+/* .hero-section { */
+    /* The NEW background rule combines a gradient and an image */
+    /* background: linear-gradient(rgba(0, 40, 85, 0.6), rgba(0, 40, 85, 0.6)), url('/images/image\ copy.png') no-repeat center center;
+    background-size: cover;
+    color: white;
+    padding: 120px 0;
+    text-align: center; */
+/* } */
+.hero-section{
+    background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/images/image\ copy.png') no-repeat center center;
+    background-size: cover;
+    color: white;
+    padding: 120px 0;
+    text-align: center;
+}
+.hero-section h1 {
+    color: white;
+    font-size: 3.5rem;
+    font-weight: 700;
+}
+.hero-section p {
+    font-size: 1.25rem;
+    max-width: 600px;
+    margin: 20px auto;
+}
+
+/* --- Feature Sections --- */
+.feature-icon {
+    font-size: 3rem;
+    color: var(--secondary-color);
+}
+.card-hover:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    transition: all 0.3s ease;
+}
+
+/* --- Footer --- */
+.footer {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 40px 0;
+}
+.footer h5 {
+    color: var(--secondary-color);
+}
+.footer a {
+    color: #ccc;
+    text-decoration: none;
+}
+.footer a:hover {
+    color: white;
+    text-decoration: underline;
+}
+.footer .social-icons a {
+    font-size: 1.5rem;
+    margin-right: 15px;
+}
+
+/* --- Login Page --- */
+.login-container {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--light-gray);
+}
+.login-card {
+    max-width: 450px;
+    width: 100%;
+}
+
+
+/* --- Admin Dashboard --- */
+.dashboard-wrapper {
+    display: flex;
+    min-height: 100vh;
+}
+.sidebar {
+    width: 260px;
+    background-color: var(--primary-color);
+    color: #fff;
+    transition: all 0.3s;
+}
+.sidebar-header {
+    padding: 20px;
+    text-align: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+.sidebar-header h3 {
+    color: #fff;
+}
+.sidebar-nav {
+    list-style: none;
+    padding: 0;
+}
+.sidebar-nav li a {
+    display: block;
+    color: #ccc;
+    padding: 15px 20px;
+    text-decoration: none;
+    transition: all 0.2s;
+}
+.sidebar-nav li a:hover, .sidebar-nav li a.active {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-left: 4px solid var(--secondary-color);
+}
+.sidebar-nav li a i {
+    margin-right: 15px;
+    width: 20px;
+}
+.main-content {
+    flex-grow: 1;
+    background-color: #f4f7fc;
+    padding: 0;
+}
+.top-navbar {
+    background-color: #fff;
+    padding: 15px 30px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.content-area {
+    padding: 30px;
+}
+.stat-card {
+    border-left: 5px solid;
+}
+.stat-card.border-primary { border-color: var(--primary-color) !important; }
+.stat-card.border-success { border-color: #28a745 !important; }
+.stat-card.border-warning { border-color: var(--secondary-color) !important; }
+.stat-card.border-danger { border-color: #dc3545 !important; }
+.stat-card i {
+    font-size: 2.5rem;
+    opacity: 0.3;
+};
+
+
+        /* [ADD THIS NEW BLOCK FOR RESPONSIVENESS] */
+        #sidebar-toggler {
+            display: none; /* Hidden by default on desktop */
+        }
+
+        @media (max-width: 991.98px) {
+            .sidebar {
+                left: -260px; /* Hide sidebar off-screen on mobile */
+            }
+            .sidebar.toggled {
+                left: 0; /* Show sidebar when toggled */
+                box-shadow: 0 0 15px rgba(0,0,0,0.25);
+            }
+            .main-content {
+                margin-left: 0; /* Main content takes full width */
+            }
+            #sidebar-toggler {
+                display: block; /* Show the hamburger button on mobile */
+            }
+        };

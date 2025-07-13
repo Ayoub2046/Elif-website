@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report Generation | Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <!-- Chart.js Library -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* [PASTE THE COMMON CSS FROM THE PREVIOUS RESPONSE HERE] */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        :root {
+            /* Light Mode */
+            --sidebar-bg: #1a2853; --sidebar-text: #b0b8d3; --sidebar-text-active: #ffffff;
+            --sidebar-active-bg: rgba(255, 255, 255, 0.08); --sidebar-active-border: #367BF5;
+            --topbar-bg: #ffffff; --main-bg: #f4f7fc; --card-bg: #ffffff;
+            --text-primary: #1a2853; --text-secondary: #5a5c69; --border-color: #e3e6f0;
+            --shadow-color: rgba(0, 0, 0, 0.05);
+        }
+        body.dark-mode {
+            /* Dark Mode */
+            --sidebar-bg: #1f2937; --topbar-bg: #111827; --main-bg: #0f172a; --card-bg: #1f2937;
+            --text-primary: #e5e7eb; --text-secondary: #d1d5db; --border-color: #374151;
+            --shadow-color: rgba(0, 0, 0, 0.2);
+        }
+        body { font-family: 'Poppins', sans-serif; background-color: var(--main-bg); }
+        .dashboard-wrapper { display: flex; min-height: 100vh; }
+        .sidebar { width: 260px; background-color: var(--sidebar-bg); position: fixed; left: 0; top: 0; height: 100%; z-index: 1000; transition: all 0.3s ease; }
+        .sidebar-header { padding: 22px 25px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        .sidebar-header h3 { color: white; font-size: 1.5rem; }
+        .sidebar-nav { list-style: none; padding: 15px 0; }
+        .sidebar-nav li a { display: flex; align-items: center; color: var(--sidebar-text); padding: 12px 25px; text-decoration: none; transition: all 0.2s; }
+        .sidebar-nav li a:hover, .sidebar-nav li a.active { background-color: var(--sidebar-active-bg); color: var(--sidebar-text-active); border-left: 4px solid var(--sidebar-active-border); padding-left: 21px; }
+        .main-content { flex-grow: 1; margin-left: 260px; transition: all 0.3s ease; }
+        .top-navbar { background-color: var(--topbar-bg); color: var(--text-primary); padding: 15px 30px; box-shadow: 0 1px 5px var(--shadow-color); display: flex; justify-content: space-between; align-items: center; }
+        #sidebar-toggler { display: none; }
+        .content-area { padding: 30px; }
+        @media (max-width: 992px) {
+            .sidebar { left: -260px; } .sidebar.toggled { left: 0; }
+            .main-content { margin-left: 0; } #sidebar-toggler { display: block; }
+        }
+        .dark-mode .form-control, .dark-mode .form-select { background-color: #1f2937; border-color: var(--border-color); color: var(--text-primary); }
+
+        /* [NEW] Report Generation Specific Styles */
+        .report-card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .report-card .card-header {
+            background-color: transparent;
+            border-bottom: 1px solid var(--border-color);
+        }
+        #report-output {
+            display: none; /* Hidden by default */
+        }
+        .printable-area {
+            color: #333; /* Use dark text for printing regardless of theme */
+        }
+        .printable-area .report-header h2 {
+            color: #1a2853;
+        }
+        @media print {
+            body, .dashboard-wrapper, .main-content {
+                margin: 0 !important;
+                padding: 0 !important;
+                background-color: white !important;
+            }
+            .sidebar, .top-navbar, .report-generator-card, .btn {
+                display: none !important;
+            }
+            .content-area {
+                padding: 0 !important;
+            }
+            #report-output {
+                display: block !important;
+                box-shadow: none !important;
+                border: none !important;
+            }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header"><h3><i class="fas fa-school"></i> <span>Admin Panel</span></h3></div>
+        <ul class="sidebar-nav">
+            <li><a href="admin.html"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+            <li><a href="user.html"><i class="fas fa-users-cog"></i> <span>User Management</span></a></li>
+            <li><a href="student.html"><i class="fas fa-user-graduate"></i> <span>Student Records</span></a></li>
+            <li><a href="teacher.html"><i class="fas fa-chalkboard-teacher"></i> <span>Teacher Management</span></a></li>
+            <li><a href="classmanagment.html"><i class="fas fa-book-open"></i> <span>Class Management</span></a></li>
+            <li><a href="fee-managment.html"><i class="fas fa-dollar-sign"></i> <span>Fee Management</span></a></li>
+            <li><a href="event.html"><i class="fas fa-calendar-alt"></i> <span>Event Calendar</span></a></li>
+            <li><a href="communications.html"><i class="fas fa-comments"></i> <span>Communication</span></a></li>
+            <li><a href="library.html"><i class="fas fa-book-reader"></i> <span>Library Management</span></a></li>
+            <li><a href="report.html" class="active"><i class="fas fa-chart-bar"></i> <span>Report Generation</span></a></li>
+            <!-- ... other links ... -->
+            <li><a href="index.html"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </nav>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
+            <h4 class="mb-0 ms-3">Report Generation</h4>
+        </nav>
+        <!-- Content Area -->
+        <div class="content-area">
+            <!-- Report Generator Form Card -->
+            <div class="card report-card report-generator-card mb-4">
+                <div class="card-header"><h5 class="mb-0">Generate a New Report</h5></div>
+                <div class="card-body">
+                    <form id="report-form">
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Report Type</label>
+                                <select class="form-select" name="reportType" required>
+                                    <option value="student_progress">Student Progress</option>
+                                    <option value="attendance_summary">Attendance Summary</option>
+                                    <option value="financial_overview">Financial Overview</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Select Student/Class</label>
+                                <select class="form-select" name="targetId" required>
+                                    <!-- Options populated by JS -->
+                                </select>
+                            </div>
+                            <div class="col-md-4 mb-3">
+                                <label class="form-label">Date Range</label>
+                                <input type="date" name="dateRange" class="form-control" required>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary"><i class="fas fa-cogs me-2"></i>Generate Report</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Report Output Card -->
+            <div class="card report-card" id="report-output">
+                <div class="card-body printable-area">
+                    <div class="report-header d-flex justify-content-between align-items-center mb-4">
+                        <div>
+                            <h2>Springfield Academy</h2>
+                            <h4 id="report-title" class="text-muted">Report Title</h4>
+                        </div>
+                        <div>
+                            <p class="mb-0"><strong>Date Generated:</strong> <span id="generation-date"></span></p>
+                            <p class="mb-0"><strong>For:</strong> <span id="report-for"></span></p>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="report-content">
+                        <!-- Report summary text -->
+                        <div id="report-summary" class="mb-4"></div>
+                        <!-- Chart container -->
+                        <div class="chart-container" style="position: relative; height:40vh; width:100%;">
+                            <canvas id="reportChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer bg-transparent text-end">
+                    <button class="btn btn-secondary" onclick="window.print()"><i class="fas fa-print me-2"></i>Print Report</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Common sidebar toggle logic
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggler = document.getElementById('sidebar-toggler');
+    if(sidebarToggler) sidebarToggler.addEventListener('click', () => {
+        sidebar.classList.toggle('toggled');
+    });
+
+    // Page-specific Report Generation JS
+    const reportForm = document.getElementById('report-form');
+    const targetSelect = reportForm.elements.targetId;
+    const reportOutput = document.getElementById('report-output');
+    
+    let chartInstance = null; // To hold the chart object
+
+    // Mock Data
+    const students = [
+        { id: 1, name: 'Michael Brown' },
+        { id: 2, name: 'Jessica Davis' },
+    ];
+    const classes = [
+        { id: 101, name: 'Grade 10 - Algebra' },
+        { id: 102, name: 'Grade 9 - Physics' },
+    ];
+
+    function populateTargetSelect(reportType) {
+        targetSelect.innerHTML = '';
+        let options = [];
+        if (reportType === 'student_progress') {
+            options = students;
+        } else if (reportType === 'attendance_summary') {
+            options = classes;
+        } else {
+            targetSelect.innerHTML = '<option value="all">All</option>';
+            return;
+        }
+        options.forEach(item => {
+            targetSelect.innerHTML += `<option value="${item.id}">${item.name}</option>`;
+        });
+    }
+
+    reportForm.elements.reportType.addEventListener('change', (e) => {
+        populateTargetSelect(e.target.value);
+    });
+    
+    reportForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        
+        const reportType = reportForm.elements.reportType.value;
+        const targetId = reportForm.elements.targetId.value;
+        const targetName = reportForm.elements.targetId.options[reportForm.elements.targetId.selectedIndex].text;
+        
+        // --- Generate Mock Data & Content based on Report Type ---
+        let reportData = {};
+        if (reportType === 'student_progress') {
+            document.getElementById('report-title').textContent = 'Student Progress Report';
+            document.getElementById('report-for').textContent = targetName;
+            document.getElementById('report-summary').innerHTML = `<p>This report details the academic progress for <strong>${targetName}</strong> for the current semester. The chart below illustrates their grade trends across major subjects.</p>`;
+            reportData = {
+                labels: ['September', 'October', 'November', 'December'],
+                datasets: [{
+                    label: 'Average Grade (%)',
+                    data: [82, 85, 88, 91],
+                    borderColor: '#367BF5',
+                    backgroundColor: 'rgba(54, 123, 245, 0.2)',
+                    fill: true,
+                    tension: 0.1,
+                }]
+            };
+        } else if (reportType === 'attendance_summary') {
+            document.getElementById('report-title').textContent = 'Class Attendance Summary';
+            document.getElementById('report-for').textContent = targetName;
+            document.getElementById('report-summary').innerHTML = `<p>This report shows the monthly attendance rates for <strong>${targetName}</strong>. Overall attendance remains high, with a slight dip in October.</p>`;
+            reportData = {
+                labels: ['September', 'October', 'November', 'December'],
+                datasets: [{
+                    label: 'Attendance Rate (%)',
+                    data: [98, 95, 97, 99],
+                    backgroundColor: ['#1cc88a', '#f6c23e', '#1cc88a', '#1cc88a'],
+                    borderColor: 'rgba(0,0,0,0.1)',
+                    borderWidth: 1
+                }]
+            };
+        } else if (reportType === 'financial_overview') {
+            document.getElementById('report-title').textContent = 'Financial Overview';
+            document.getElementById('report-for').textContent = 'Entire School';
+            document.getElementById('report-summary').innerHTML = `<p>This pie chart illustrates the breakdown of the school's fee status for the current term, showing revenue collected versus outstanding fees.</p>`;
+            reportData = {
+                labels: ['Paid', 'Overdue', 'Pending'],
+                datasets: [{
+                    label: 'Fee Status',
+                    data: [125000, 12450, 35000],
+                    backgroundColor: ['#1cc88a', '#e74a3b', '#f6c23e'],
+                    hoverOffset: 4
+                }]
+            };
+        }
+
+        // --- Render the Report ---
+        document.getElementById('generation-date').textContent = new Date().toLocaleDateString();
+        reportOutput.style.display = 'block';
+
+        // --- Render the Chart ---
+        const ctx = document.getElementById('reportChart').getContext('2d');
+        if (chartInstance) {
+            chartInstance.destroy(); // Destroy previous chart to prevent conflicts
+        }
+        
+        const chartType = reportType === 'student_progress' ? 'line' : (reportType === 'attendance_summary' ? 'bar' : 'pie');
+        
+        chartInstance = new Chart(ctx, {
+            type: chartType,
+            data: reportData,
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    title: {
+                        display: true,
+                        text: document.getElementById('report-title').textContent,
+                    }
+                }
+            }
+        });
+    });
+
+    // Initial population of the select dropdown
+    populateTargetSelect(reportForm.elements.reportType.value);
+});
+</script>
+</body>
+</html>

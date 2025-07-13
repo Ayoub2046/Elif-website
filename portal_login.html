@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Login | Al-Qalam Pss</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7fc; }
+        .login-container { min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+        .login-card { max-width: 450px; width: 100%; border: none; box-shadow: 0 4px 25px rgba(0,0,0,0.1); border-radius: 10px; }
+        .login-header { color: #1a2853; }
+        .btn-primary { background-color: #1a2853; border-color: #1a2853; }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="card login-card">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-school fa-3x login-header"></i>
+                    <h3 class="mt-3 login-header fw-bold">Portal Login</h3>
+                    <p class="text-muted">Sign in to access your dashboard</p>
+                </div>
+                <div id="login-alert" class="text-center mb-3"></div>
+                <form id="login-form">
+                    <div class="mb-3"><label for="email" class="form-label">Email Address</label><input type="email" class="form-control" id="email" required></div>
+                    <div class="mb-3"><label for="password" class="form-label">Password</label><input type="password" class="form-control" id="password" required></div>
+                    <div class="d-grid mt-4"><button type="submit" class="btn btn-primary btn-lg fw-bold">Login</button></div>
+                    <div class="text-center mt-4">
+                        <p class="text-muted">Don't have an account? <a href="resister.html">Register here</a></p>
+                        <a href="index.html" class="text-decoration-none"><i class="fas fa-arrow-left me-1"></i> Back to Website</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const loginForm = document.getElementById('login-form');
+    const loginAlert = document.getElementById('login-alert');
+
+    // --- THIS IS THE CRUCIAL FIX ---
+    // Load the complete, up-to-date list of users from the browser's memory.
+    // This now includes any users you created on the register.html page.
+    const users = JSON.parse(localStorage.getItem('schoolUsers')) || [];
+    const studentData = JSON.parse(localStorage.getItem('allStudents')) || [];
+
+    // For testing, let's ensure the default admin exists if no users are found
+    if (users.length === 0) {
+        users.push({ id: 1, email: 'admin@school.edu', password: 'password123', role: 'Admin', name: 'Admin User' });
+        localStorage.setItem('schoolUsers', JSON.stringify(users));
+    }
+    
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const emailInput = document.getElementById('email').value;
+        const passwordInput = document.getElementById('password').value;
+        loginAlert.innerHTML = '';
+
+        // Check against the main user list (Admin, Teacher, Parent)
+        const user = users.find(u => u.email === emailInput);
+        if (user && user.password === passwordInput) {
+            sessionStorage.setItem('activeUser', JSON.stringify({ loggedIn: true, role: user.role, name: user.name, id: user.id }));
+            if (user.role === 'Admin') {
+                window.location.href = 'admin.html';
+            } // Add other role redirects here if needed
+            return;
+        }
+
+        // Check against the student list
+        const student = studentData.find(s => `SA${s.id}` === emailInput.toUpperCase());
+        if(student && student.enrollmentDate === passwordInput) {
+            sessionStorage.setItem('activeUser', JSON.stringify({ loggedIn: true, role: 'Student', name: student.name, id: student.id }));
+            window.location.href = 'student_result.html';
+            return;
+        }
+
+        loginAlert.innerHTML = `<div class="alert alert-danger">Invalid credentials. Please try again.</div>`;
+    });
+});
+</script>
+</body>
+</html>

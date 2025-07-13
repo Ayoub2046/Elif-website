@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>News & Events | Al-Qalam Pss</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <style>
+        /* Internal CSS for this page */
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+        }
+
+        /* --- Classic Navigation Bar Style (Same as before) --- */
+        .navbar-classic {
+            background-color: white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            padding: 1rem 0;
+        }
+        .navbar-classic .navbar-nav .nav-link {
+            color: #555;
+            font-weight: 500;
+            padding: 0.5rem 1rem;
+        }
+        .navbar-classic .navbar-nav .nav-link.active {
+            color: #000;
+            font-weight: 700;
+        }
+        
+        /* [NEW] News Page Specific Styles */
+        .page-header {
+            background-color: #e9ecef;
+            padding: 4rem 0;
+            margin-bottom: 3rem;
+        }
+        .featured-news-card {
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border-radius: 8px;
+            overflow: hidden; /* To keep image corners rounded */
+        }
+        .featured-news-card .card-body {
+            padding: 2rem;
+        }
+        .recent-news-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1.5rem;
+        }
+        .recent-news-item img {
+            width: 100px;
+            height: 75px;
+            object-fit: cover;
+            border-radius: 6px;
+            margin-right: 1rem;
+        }
+        .recent-news-item h6 {
+            margin-bottom: 0.25rem;
+        }
+        .recent-news-item a {
+            text-decoration: none;
+            color: #343a40;
+            transition: color 0.2s;
+        }
+        .recent-news-item a:hover h6 {
+            color: #0d6efd;
+        }
+        .footer {
+            background-color: #343a40;
+            color: white;
+            padding: 2rem 0;
+            margin-top: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Classic Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-classic">
+        <div class="container">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavClassic">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNavClassic">
+                <ul class="navbar-nav mx-auto">
+                    <li class="nav-item"><a class="nav-link" href="index.html">Home</a></li>
+                    <li class="nav-item"><a class="nav-link" href="about.html">About Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="academics.html">Academics</a></li>
+                    <li class="nav-item"><a class="nav-link" href="admision.html">Admissions</a></li>
+                    <li class="nav-item"><a class="nav-link active" href="newsevents.html">News & Events</a></li>
+                    <li class="nav-item"><a class="nav-link" href="contact.html">Contact</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Header -->
+    <header class="page-header text-center">
+        <div class="container">
+            <h1 class="display-4">News & Events</h1>
+            <p class="lead">Stay up-to-date with the latest happenings at Springfield Academy.</p>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container">
+        <div class="row g-5">
+            <!-- Left Column: Featured Story -->
+            <div class="col-lg-8">
+                <h3 class="mb-4">Featured Story</h3>
+                <div class="card featured-news-card">
+                    <img src="https://via.placeholder.com/800x400.png?text=Annual+Science+Fair" class="card-img-top" alt="Featured News">
+                    <div class="card-body">
+                        <p class="text-muted mb-2"><small>October 26, 2023</small></p>
+                        <h4 class="card-title">Annual Science Fair Winners Announced</h4>
+                        <p class="card-text mt-3">This year's Science Fair was a remarkable success, showcasing the ingenuity and hard work of our students from all grade levels. Projects ranged from innovative robotics to in-depth ecological studies. We are incredibly proud of every participant for their dedication to scientific inquiry. A special congratulations to our grand prize winners for their outstanding projects.</p>
+                        <a href="#" class="btn btn-primary">Read Full Story</a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Recent News -->
+            <div class="col-lg-4">
+                <h3 class="mb-4">Recent News</h3>
+                
+                <div class="recent-news-item">
+                    <img src="https://via.placeholder.com/200x150.png?text=Sports+Day" alt="Sports Day">
+                    <div>
+                        <a href="#"><h6>A Day of Triumph at Annual Sports Day</h6></a>
+                        <small class="text-muted">October 22, 2023</small>
+                    </div>
+                </div>
+                
+                <hr>
+
+                <div class="recent-news-item">
+                    <img src="https://via.placeholder.com/200x150.png?text=Community+Service" alt="Community Service">
+                    <div>
+                        <a href="#"><h6>Students Lead Successful Community Cleanup</h6></a>
+                        <small class="text-muted">October 18, 2023</small>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="recent-news-item">
+                    <img src="https://via.placeholder.com/200x150.png?text=Enrollment" alt="Enrollment">
+                    <div>
+                        <a href="admissions.html"><h6>Enrollment for 2024-2025 Now Open</h6></a>
+                        <small class="text-muted">October 15, 2023</small>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container text-center">
+            <p>© 2024 Springfield Academy. All Rights Reserved.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const navLinks = document.querySelectorAll('.navbar-classic .nav-link');
+            const currentPage = window.location.pathname.split('/').pop();
+            navLinks.forEach(link => {
+                link.classList.remove('active');
+                if (link.getAttribute('href') === currentPage) {
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Content Management | Admin Panel</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="dashboard-wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar">
+        <div class="sidebar-header"><h3><i class="fas fa-school"></i> <span>Admin Panel</span></h3></div>
+        <ul class="sidebar-nav">
+            <!-- Your other admin links go here -->
+            <li><a href="admin.html"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
+            <li><a href="content.html" class="active"><i class="fas fa-edit"></i> <span>Content Management</span></a></li>
+            <!-- ... -->
+            <li><a href="#" id="logout-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
+        </ul>
+    </nav>
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- Top Navbar -->
+        <nav class="top-navbar">
+            <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
+            <h4 class="mb-0 ms-3">Content Management</h4>
+        </nav>
+        <!-- Content Area -->
+        <div class="content-area">
+            <div id="save-alert" class="position-fixed top-0 end-0 p-3" style="z-index: 1056;"></div>
+            <div class="card content-card">
+                <div class="card-header"><h5 class="mb-0">Edit Homepage Content</h5></div>
+                <div class="card-body p-4">
+                    <form id="content-form">
+                        <h6 class="text-primary fw-bold">HERO SECTION</h6>
+                        <div class="row">
+                            <div class="col-md-6 mb-3"><label class="form-label">Main Title</label><input type="text" id="hero-title" class="form-control"></div>
+                            <div class="col-md-6 mb-3"><label class="form-label">Subtitle</label><input type="text" id="hero-subtitle" class="form-control"></div>
+                        </div>
+                        <div class="mb-3"><label class="form-label">Background Image URL</label><input type="text" id="hero-bg" class="form-control" placeholder="https://example.com/image.jpg"></div>
+                        <hr class="form-section-divider">
+                        <h6 class="text-primary fw-bold">"WHY CHOOSE US?" SECTION</h6>
+                        <div class="row">
+                            <div class="col-md-4 mb-3"><label class="form-label">Feature 1 Title</label><input type="text" id="feature1-title" class="form-control mb-2"><label class="form-label">Feature 1 Text</label><textarea id="feature1-text" class="form-control" rows="3"></textarea></div>
+                            <div class="col-md-4 mb-3"><label class="form-label">Feature 2 Title</label><input type="text" id="feature2-title" class="form-control mb-2"><label class="form-label">Feature 2 Text</label><textarea id="feature2-text" class="form-control" rows="3"></textarea></div>
+                            <div class="col-md-4 mb-3"><label class="form-label">Feature 3 Title</label><input type="text" id="feature3-title" class="form-control mb-2"><label class="form-label">Feature 3 Text</label><textarea id="feature3-text" class="form-control" rows="3"></textarea></div>
+                        </div>
+                        <hr class="form-section-divider">
+                        <button type="submit" class="btn btn-primary px-4"><i class="fas fa-save me-2"></i>Save All Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    // Auth Guard
+    if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') { window.location.href = 'login.html'; }
+    // Logout Link
+    document.getElementById('logout-link').addEventListener('click', (e) => { e.preventDefault(); sessionStorage.removeItem('isAdminLoggedIn'); window.location.href = 'login.html'; });
+    // Sidebar Toggle
+    const sidebar = document.querySelector('.sidebar');
+    const sidebarToggler = document.getElementById('sidebar-toggler');
+    if(sidebarToggler) sidebarToggler.addEventListener('click', () => sidebar.classList.toggle('toggled'));
+
+    // Content Management Specific JS
+    const contentForm = document.getElementById('content-form');
+    const formFields = {
+        heroTitle: document.getElementById('hero-title'),
+        heroSubtitle: document.getElementById('hero-subtitle'),
+        heroBg: document.getElementById('hero-bg'),
+        feature1Title: document.getElementById('feature1-title'),
+        feature1Text: document.getElementById('feature1-text'),
+        feature2Title: document.getElementById('feature2-title'),
+        feature2Text: document.getElementById('feature2-text'),
+        feature3Title: document.getElementById('feature3-title'),
+        feature3Text: document.getElementById('feature3-text'),
+    };
+    
+    function loadContent() {
+        const savedContent = JSON.parse(localStorage.getItem('homepageContent'));
+        if (savedContent) {
+            for (const key in formFields) {
+                if (savedContent[key]) formFields[key].value = savedContent[key];
+            }
+        }
+    }
+
+    contentForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const newContent = {};
+        for (const key in formFields) { newContent[key] = formFields[key].value; }
+        localStorage.setItem('homepageContent', JSON.stringify(newContent));
+        
+        const alertDiv = document.getElementById('save-alert');
+        alertDiv.innerHTML = `<div class="alert alert-success alert-dismissible fade show" role="alert"><strong>Success!</strong> Homepage content saved.<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+        setTimeout(() => {
+            const alert = bootstrap.Alert.getOrCreateInstance(alertDiv.querySelector('.alert'));
+            if(alert) alert.close();
+        }, 4000);
+    });
+
+    loadContent();
+});
+</script>
+</body>
+</html>

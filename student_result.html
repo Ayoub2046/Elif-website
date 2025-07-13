@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Results</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
+    <style>
+        body { font-family: 'Poppins', sans-serif; background-color: #f4f7fc; color: #5a5c69; }
+        .login-container { display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .card { border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); border: none; }
+        .report-card-container { background-color: #ffffff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .report-card-header { border-bottom: 2px solid #1a2853; padding-bottom: 15px; margin-bottom: 20px; }
+        .report-card-header h2 { color: #1a2853; font-weight: 700; }
+        .student-info p { margin-bottom: 5px; }
+        .results-table th, .results-table td { vertical-align: middle; }
+        .results-table th { background-color: #e3e6f0; color: #1a2853; }
+        .grade-a { color: #1cc88a; font-weight: 700; } /* Green for A */
+        .grade-b { color: #4e73df; font-weight: 700; } /* Blue for B */
+        .grade-c { color: #f6c23e; font-weight: 700; } /* Yellow for C */
+        .grade-d { color: #fd7e14; font-weight: 700; } /* Orange for D */
+        .grade-f { color: #e74a3b; font-weight: 700; } /* Red for F */
+    </style>
+</head>
+<body>
+    <div class="login-container" id="initial-view">
+        <div class="card login-card">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <i class="fas fa-user-graduate fa-3x" style="color:#1a2853;"></i>
+                    <h3 class="mt-3 fw-bold" style="color:#1a2853;">Student Results Portal</h3>
+                    <p class="text-muted">Enter your credentials to view your report card.</p>
+                </div>
+                <div id="login-alert" class="text-center mb-3"></div>
+                <form id="student-login-form">
+                    <div class="mb-3">
+                        <label for="studentId" class="form-label">Student ID</label>
+                        <input type="text" class="form-control" id="studentId" placeholder="e.g., SA2023001" title="Student ID" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password (Birth Date)</label>
+                        <input type="date" class="form-control" id="password" placeholder="YYYY-MM-DD" title="Birth Date" required>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold">View Results</button>
+                    </div>
+                    <div class="text-center mt-4">
+                        <a href="index.html" class="text-decoration-none"><i class="fas fa-arrow-left me-1"></i> Back to Website</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="container mt-5 d-none" id="results-view">
+        <div class="report-card-container">
+            <div class="report-card-header text-center">
+                <h2>Student Report Card</h2>
+            </div>
+            <div class="student-info mb-4">
+                <p><strong>Student ID:</strong> <span id="display-student-id"></span></p>
+                <p><strong>Name:</strong> <span id="display-student-name"></span></p>
+                <p><strong>Grade:</strong> <span id="display-student-grade"></span></p>
+                <p><strong>Enrollment Date:</strong> <span id="display-enrollment-date"></span></p>
+                <p><strong>Birth Date:</strong> <span id="display-birth-date"></span></p>
+            </div>
+            <h4>Subject-wise Results</h4>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered results-table">
+                    <thead><tr><th>Subject</th><th>Grade</th></tr></thead>
+                    <tbody id="results-table-body"></tbody>
+                </table>
+            </div>
+            <div class="text-center">
+                <button class="btn btn-primary me-2" onclick="window.print()"><i class="fas fa-print me-1"></i> Print Report</button>
+                <a href="student.html" class="btn btn-secondary"><i class="fas fa-arrow-left me-1"></i> Back to Records</a>
+            </div>
+        </div>
+    </div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const initialView = document.getElementById('initial-view');
+    const resultsView = document.getElementById('results-view');
+    const loginForm = document.getElementById('student-login-form');
+    const loginAlert = document.getElementById('login-alert');
+
+    // Attempt to get student info from sessionStorage (if navigated from admin/student panel)
+    const viewingStudentId = sessionStorage.getItem('viewingStudentId');
+    const viewingStudentBirthDate = sessionStorage.getItem('viewingStudentBirthDate');
+
+    console.log('Session Storage - ID:', viewingStudentId, 'Birth Date:', viewingStudentBirthDate);
+
+    // Load all student data (from localStorage, which is managed by student.html)
+    let allStudents = JSON.parse(localStorage.getItem('allStudents')) || [];
+
+    // Fallback: If no students found in localStorage, populate with sample data for testing
+    if (allStudents.length === 0) {
+        console.log('No students in localStorage, populating with sample data.');
+        allStudents = [
+            { id: 2023001, name: 'Michael Brown', grade: '10th', enrollmentDate: '2023-09-01', birthDate: '2007-01-15', results: [{ subject: "Mathematics", grade: "A" }, { subject: "English", grade: "B+" }] },
+            { id: 2023002, name: 'Jessica Davis', grade: '9th', enrollmentDate: '2023-09-01', birthDate: '2008-03-20', results: [{ subject: "Mathematics", grade: "B" }, { subject: "Science", grade: "A-" }] },
+            { id: 1749575045262, name: 'ayuub aadam abdi', grade: '12', enrollmentDate: '2004-01-01', birthDate: '2012-12-12', results: [{ subject: "History", grade: "C+" }, { subject: "Art", grade: "A" }] }
+        ];
+        // Save this sample data to localStorage so it persists for subsequent direct visits
+        localStorage.setItem('allStudents', JSON.stringify(allStudents));
+    }
+
+    console.log('All Students data:', allStudents);
+
+    function displayResults(student) {
+        initialView.classList.add('d-none');
+        resultsView.classList.remove('d-none');
+
+        document.getElementById('display-student-id').textContent = `SA${student.id}`;
+        document.getElementById('display-student-name').textContent = student.name;
+        document.getElementById('display-student-grade').textContent = student.grade;
+        document.getElementById('display-enrollment-date').textContent = student.enrollmentDate;
+        document.getElementById('display-birth-date').textContent = student.birthDate;
+
+        const resultsTableBody = document.getElementById('results-table-body');
+        resultsTableBody.innerHTML = student.results.map(r => `
+            <tr>
+                <td>${r.subject}</td>
+                <td class="grade-${r.grade.charAt(0).toLowerCase()}">${r.grade}</td>
+            </tr>
+        `).join('');
+
+        // Clear sessionStorage after displaying results to prevent stale data
+        sessionStorage.removeItem('viewingStudentId');
+        sessionStorage.removeItem('viewingStudentBirthDate');
+    }
+
+    if (viewingStudentId && viewingStudentBirthDate) {
+        // Direct access from admin/student panel
+        console.log('Attempting direct access with ID from session storage:', viewingStudentId);
+        const student = allStudents.find(s => s.id === parseInt(viewingStudentId) && s.birthDate === viewingStudentBirthDate);
+        console.log('Student found for direct access:', student);
+        if (student) {
+            displayResults(student);
+        } else {
+            // If data is invalid or student not found, show login form
+            console.log('Student not found for direct access, showing login form.');
+            initialView.classList.remove('d-none');
+            resultsView.classList.add('d-none');
+            loginAlert.innerHTML = '<div class="alert alert-warning">Student data not found or invalid. Please log in.</div>';
+        }
+    } else {
+        // Show login form if not navigated from admin/student panel
+        console.log('No session storage data, showing login form.');
+        initialView.classList.remove('d-none');
+        resultsView.classList.add('d-none');
+    }
+
+    // Handle manual login form submission
+    loginForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const studentIdInput = document.getElementById('studentId').value;
+        const passwordInput = document.getElementById('password').value;
+        loginAlert.innerHTML = '';
+
+        console.log('Manual Login Attempt - Input ID:', studentIdInput, 'Input Password:', passwordInput);
+
+        const studentIdNum = parseInt(studentIdInput.replace(/SA/i, ''));
+        console.log('Parsed Student ID Number:', studentIdNum);
+        const student = allStudents.find(s => s.id === studentIdNum);
+        
+        console.log('Student found by ID:', student);
+        console.log('Comparing student birthDate (', student ? student.birthDate : 'N/A', ') with input password (', passwordInput, ')');
+
+        if (student && student.birthDate === passwordInput) {
+            // For manual login, store only current student's data in sessionStorage if needed for refresh
+            sessionStorage.setItem('viewingStudentId', student.id);
+            sessionStorage.setItem('viewingStudentBirthDate', student.birthDate);
+            displayResults(student);
+        } else {
+            loginAlert.innerHTML = `<div class="alert alert-danger">Invalid Student ID or Birth Date.</div>`;
+        }
+    });
+});
+</script>
+</body>
+</html>
