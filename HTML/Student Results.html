@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Results Portal</title>
+    <link rel="icon" type="image/png" href="/images/ALIF.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        /* Custom styles for the report card */
+        .report-card-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2.5rem;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .report-card-header {
+            text-align: center;
+            border-bottom: 2px solid #002244;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        .btn btn-secondary{
+            margin-top: 10px;
+        }
+
+        .report-card-header h2 {
+            color: #002244;
+            font-weight: 700;
+        }
+
+        .student-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.5rem 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .results-table th {
+            background-color: #f8f9fa;
+        }
+
+        @media print {
+
+            body,
+            .login-container {
+                background-color: white !important;
+            }
+
+            .login-container,
+            .btn {
+                display: none !important;
+            }
+
+            .report-card-container {
+                box-shadow: none !important;
+                margin: 0 !important;
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Login View (Visible by default) -->
+    <div class="login-container" id="initial-view">
+        <div class="card login-card">
+            <div class="card-body p-5">
+                <div class="text-center mb-4">
+                    <!-- <i class="fas fa-user-graduate fa-3x login-header"></i> -->
+                    <!-- This is the new line for your logo -->
+                    <img src="/images/ALIF.png" alt="School Logo"
+                        style="width: 72px; height: 72px; border-radius: 50%;">
+                    <h3 class="mt-3 fw-bold login-header">Student Results Portal</h3>
+                    <p class="text-muted">Enter your credentials to view your report card.</p>
+                </div>
+                <div id="login-alert" class="text-center mb-3"></div>
+                <form id="student-login-form">
+                    <div class="mb-3">
+                        <label for="studentId" class="form-label">Student ID</label>
+                        <input type="text" class="form-control" id="studentId" placeholder="e.g.  ELP250000" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password (Birth Date)</label>
+                        <input type="date" class="form-control" id="password" required>
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold">View Results</button>
+                    </div>
+                    <div class="text-center mt-4">
+                        <a href="/HTML/index.html" class="text-decoration-none"><i class="fas fa-arrow-left me-1"></i>
+                            Back to Website</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Results View (Hidden by default) -->
+    <div class="container d-none" id="results-view">
+        <div class="report-card-container">
+            <div class="report-card-header">
+                <img src="/images/ALIF.png" alt="School Logo"
+                    style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 1rem;">
+                <h2>Student Report Card</h2>
+                <h5>Elif Pu Collage</h5>
+            </div>
+            <div class="student-info">
+                <div><strong>Student ID:</strong> <span id="display-student-id"></span></div>
+                <div><strong>Student Name:</strong> <span id="display-student-name"></span></div>
+                <div><strong>Grade:</strong> <span id="display-student-grade"></span></div>
+                <div><strong>Enrollment Date:</strong> <span id="display-enrollment-date"></span></div>
+            </div>
+            <h4 class="mb-3">Academic Performance</h4>
+            <div class="table-responsive mb-4">
+                <table class="table table-bordered results-table">
+                    <thead>
+                        <tr>
+                            <th>Subject</th>
+                            <th>Score</th>
+                        </tr>
+                    </thead>
+                    <tbody id="results-table-body"></tbody>
+                </table>
+            </div>
+            <div class="text-center">
+                <button class="btn btn-primary me-2" onclick="window.print()"><i class="fas fa-print me-1" style="margin-bottom: 5px;"></i> Print
+                    Report</button>
+                <a href="/HTML/index.html" class="btn btn-secondary" style="margin-top: 10px;"><i class="fas fa-arrow-left me-1"></i> Back to
+                    Website</a>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- The corrected script for HTML/Student Results.html -->
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const initialView = document.getElementById('initial-view');
+            const resultsView = document.getElementById('results-view');
+            const loginForm = document.getElementById('student-login-form');
+            const loginAlert = document.getElementById('login-alert');
+            const RESULTS_API_URL = '/api/results';
+
+            function displayResults(studentData) {
+                initialView.classList.add('d-none');
+                resultsView.classList.remove('d-none');
+
+                // Display the full ID, not the database ID
+                document.getElementById('display-student-id').textContent = `ELP${250000 + studentData.id}`;
+                document.getElementById('display-student-name').textContent = studentData.name;
+                document.getElementById('display-student-grade').textContent = studentData.grade;
+
+                const resultsTableBody = document.getElementById('results-table-body');
+                let tableHtml = Object.entries(studentData.subjects).map(([subject, score]) => `
+                <tr><td>${subject}</td><td>${score}%</td></tr>`).join('');
+
+                tableHtml += `<tr class="fw-bold table-light"><td>Overall GPA</td><td>${studentData.gpa || 'N/A'}</td></tr>`;
+                tableHtml += `<tr class="fw-bold table-light"><td>Teacher's Remarks</td><td>${studentData.remarks || ''}</td></tr>`;
+
+                resultsTableBody.innerHTML = tableHtml;
+            }
+
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const studentIdInput = document.getElementById('studentId').value.trim().toUpperCase().replace('ELP', '');
+
+                // --- THIS IS THE FIX ---
+                // Convert the user-facing ID to the real database ID
+                const realDbId = parseInt(studentIdInput) - 250000;
+
+                const passwordInput = document.getElementById('password').value.trim();
+                loginAlert.innerHTML = '';
+
+                try {
+                    // Use the realDbId to fetch from the API
+                    const response = await fetch(`${RESULTS_API_URL}/${realDbId}`);
+                    if (!response.ok) throw new Error('Student ID not found.');
+                    const studentData = await response.json();
+
+                    if (studentData.birthDate === passwordInput) {
+                        displayResults(studentData);
+                    } else {
+                        throw new Error('Invalid password.');
+                    }
+                } catch (error) {
+                    loginAlert.innerHTML = `<div class="alert alert-danger">Invalid Student ID or Password.</div>`;
+                    console.error("Login Error:", error.message);
+                }
+            });
+        });
+    </script>
+</body>
+
+</html>

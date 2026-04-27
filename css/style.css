@@ -1,34 +1,104 @@
-/* css/style.css */
-
 /* --- Google Font --- */
 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
 
 /* --- Global Variables & Styles --- */
 :root {
-    --primary-color: #003366; /* Deep Blue */
-    --secondary-color: #f0ad4e; /* Gold/Yellow */
+    --primary-color: #000009d8;
+    --secondary-color: #111111;
     --light-gray: #f8f9fa;
-    --dark-gray: #343a40;
-    --text-color: #555;
+    --dark-gray: #222222;
+    --text-color: #333333;
+    --sidebar-width: 260px;
 }
 
 
 
+/* Add this to your /css/style.css file */
 
+:root {
+    --primary-color: #000009d8;
+    --secondary-color: #111111;
+    --brand-green: #1CD91D;
+    /* Or your logo's exact green */
+    /* ... rest of your variables ... */
+}
 
+.bg-brand-green {
+    background-color: var(--brand-green);
+}
 
+/* --- Dark Theme Styles --- */
+/* ... (your dark theme styles are correct and unchanged) ... */
+body[data-theme="dark"] {
+    background: #222 !important;
+    color: #fff !important;
+}
 
+body[data-theme="dark"] .sidebar,
+body[data-theme="dark"] .main-content {
+    background: #23272b !important;
+}
 
+body[data-theme="dark"] .card,
+body[data-theme="dark"] .form-control,
+body[data-theme="dark"] .form-select,
+body[data-theme="dark"] .dropdown-menu,
+body[data-theme="dark"] .top-navbar {
+    background: #23272b !important;
+    color: #fff !important;
+    border-color: #444 !important;
+}
 
+body[data-theme="dark"] .table {
+    color: #fff;
+}
 
+body[data-theme="dark"] .table th,
+body[data-theme="dark"] .table td {
+    border-color: #444 !important;
+}
 
+body[data-theme="dark"] .table-hover>tbody>tr:hover {
+    color: #fff;
+    background-color: #2c3136 !important;
+}
+
+body[data-theme="dark"] .stat-card {
+    background: #2c2f34 !important;
+    color: #fff !important;
+}
+
+body[data-theme="dark"] h1,
+body[data-theme="dark"] h2,
+body[data-theme="dark"] h3,
+body[data-theme="dark"] h4,
+body[data-theme="dark"] h5,
+body[data-theme="dark"] h6 {
+    color: #fff !important;
+}
+
+body[data-theme="dark"] .btn-primary {
+    background: #2eed03 !important;
+    border-color: #01da50 !important;
+}
+
+body[data-theme="dark"] .content-area {
+    background-color: #111827 !important;
+}
+
+/* --- General & Public Website Styles --- */
 body {
     font-family: 'Poppins', sans-serif;
     color: var(--text-color);
     line-height: 1.7;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
     color: var(--primary-color);
     font-weight: 600;
 }
@@ -37,6 +107,7 @@ h1, h2, h3, h4, h5, h6 {
     background-color: var(--primary-color);
     border-color: var(--primary-color);
 }
+
 .btn-primary:hover {
     background-color: #002244;
     border-color: #002244;
@@ -47,88 +118,41 @@ h1, h2, h3, h4, h5, h6 {
     border-color: var(--secondary-color);
     color: #fff;
 }
+
 .btn-secondary:hover {
-    background-color: #d89633;
-    border-color: #d89633;
+    background-color: #333;
+    border-color: #333;
 }
 
-/* --- Navbar --- */
 .navbar-brand {
     font-weight: 700;
     font-size: 1.5rem;
 }
+
 .navbar {
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
 }
 
-/* --- Hero Section --- */
-/* .hero-section {
-    background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/images/image\ copy.png') no-repeat center center;
-    background-size: cover;
-    color: white;
-    padding: 120px 0;
-    text-align: center;
-} */
-/* .hero-section { */
-    /* The NEW background rule combines a gradient and an image */
-    /* background: linear-gradient(rgba(0, 40, 85, 0.6), rgba(0, 40, 85, 0.6)), url('/images/image\ copy.png') no-repeat center center;
-    background-size: cover;
-    color: white;
-    padding: 120px 0;
-    text-align: center; */
-/* } */
-.hero-section{
-    background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/images/image\ copy.png') no-repeat center center;
+.hero-section {
+    background: linear-gradient(rgba(0, 51, 102, 0.7), rgba(0, 51, 102, 0.7)), url('/images/bg.jpg') no-repeat center center;
     background-size: cover;
     color: white;
     padding: 120px 0;
     text-align: center;
 }
+
 .hero-section h1 {
     color: white;
     font-size: 3.5rem;
     font-weight: 700;
 }
+
 .hero-section p {
     font-size: 1.25rem;
     max-width: 600px;
     margin: 20px auto;
 }
 
-/* --- Feature Sections --- */
-.feature-icon {
-    font-size: 3rem;
-    color: var(--secondary-color);
-}
-.card-hover:hover {
-    transform: translateY(-10px);
-    box-shadow: 0 10px 20px rgba(0,0,0,0.15);
-    transition: all 0.3s ease;
-}
-
-/* --- Footer --- */
-.footer {
-    background-color: var(--primary-color);
-    color: white;
-    padding: 40px 0;
-}
-.footer h5 {
-    color: var(--secondary-color);
-}
-.footer a {
-    color: #ccc;
-    text-decoration: none;
-}
-.footer a:hover {
-    color: white;
-    text-decoration: underline;
-}
-.footer .social-icons a {
-    font-size: 1.5rem;
-    margin-right: 15px;
-}
-
-/* --- Login Page --- */
 .login-container {
     min-height: 100vh;
     display: flex;
@@ -136,94 +160,258 @@ h1, h2, h3, h4, h5, h6 {
     justify-content: center;
     background-color: var(--light-gray);
 }
+
 .login-card {
     max-width: 450px;
     width: 100%;
 }
 
-
-/* --- Admin Dashboard --- */
+/*
+=========================================
+    ADMIN DASHBOARD STYLES
+=========================================
+*/
 .dashboard-wrapper {
     display: flex;
     min-height: 100vh;
+    overflow-x: hidden;
 }
+
+/* --- Sidebar --- */
 .sidebar {
-    width: 260px;
-    background-color: var(--primary-color);
+    width: var(--sidebar-width);
+    min-width: var(--sidebar-width);
+    background-color: #000009d8;
     color: #fff;
-    transition: all 0.3s;
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    z-index: 1030;
+    transition: transform 0.3s ease-in-out;
 }
+
 .sidebar-header {
     padding: 20px;
     text-align: center;
     border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
+
 .sidebar-header h3 {
     color: #fff;
+    font-size: 1.2rem;
 }
+
 .sidebar-nav {
     list-style: none;
     padding: 0;
+    /* --- FIX #1: SIDEBAR SCROLLING --- */
+    height: calc(100vh - 100px);
+    /* Adjust height to account for header */
+    overflow-y: auto;
+    /* Add a scrollbar only when needed */
 }
+
 .sidebar-nav li a {
-    display: block;
+    display: flex;
+    align-items: center;
     color: #ccc;
     padding: 15px 20px;
     text-decoration: none;
     transition: all 0.2s;
 }
-.sidebar-nav li a:hover, .sidebar-nav li a.active {
+
+.sidebar-nav li a:hover,
+.sidebar-nav li a.active {
     background-color: rgba(255, 255, 255, 0.1);
     color: #fff;
     border-left: 4px solid var(--secondary-color);
+    padding-left: 16px;
 }
+
 .sidebar-nav li a i {
     margin-right: 15px;
     width: 20px;
+    text-align: center;
 }
+
+/* --- Main Content Area --- */
 .main-content {
     flex-grow: 1;
-    background-color: #f4f7fc;
-    padding: 0;
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    transition: margin-left 0.3s ease-in-out;
 }
+
 .top-navbar {
     background-color: #fff;
     padding: 15px 30px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+    display: flex;
+    align-items: center;
 }
+
 .content-area {
     padding: 30px;
+    background-color: #f4f7fc;
+    flex-grow: 1;
 }
+
 .stat-card {
     border-left: 5px solid;
 }
-.stat-card.border-primary { border-color: var(--primary-color) !important; }
-.stat-card.border-success { border-color: #28a745 !important; }
-.stat-card.border-warning { border-color: var(--secondary-color) !important; }
-.stat-card.border-danger { border-color: #dc3545 !important; }
+
+.stat-card.border-primary {
+    border-color: var(--primary-color) !important;
+}
+
+.stat-card.border-success {
+    border-color: #1cc88a !important;
+}
+
+.stat-card.border-warning {
+    border-color: #f6c23e !important;
+}
+
+.stat-card.border-danger {
+    border-color: #e74a3b !important;
+}
+
 .stat-card i {
     font-size: 2.5rem;
     opacity: 0.3;
-};
+}
+
+/* --- FIX #2: CLASS MANAGEMENT DROPDOWN --- */
+.class-card .card-header {
+    /* This ensures the dropdown button is positioned correctly */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.class-card .dropdown {
+    position: static;
+    /* Let Bootstrap handle the positioning */
+}
 
 
-        /* [ADD THIS NEW BLOCK FOR RESPONSIVENESS] */
-        #sidebar-toggler {
-            display: none; /* Hidden by default on desktop */
-        }
 
-        @media (max-width: 991.98px) {
-            .sidebar {
-                left: -260px; /* Hide sidebar off-screen on mobile */
-            }
-            .sidebar.toggled {
-                left: 0; /* Show sidebar when toggled */
-                box-shadow: 0 0 15px rgba(0,0,0,0.25);
-            }
-            .main-content {
-                margin-left: 0; /* Main content takes full width */
-            }
-            #sidebar-toggler {
-                display: block; /* Show the hamburger button on mobile */
-            }
-        };
+/* ... inside your /css/style.css file ... */
+
+/* 
+=========================================
+    LIBRARY MANAGEMENT STYLES
+=========================================
+*/
+
+.book-card {
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background-color: var(--card-bg);
+    box-shadow: var(--shadow-color);
+}
+
+.book-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+}
+
+.book-cover {
+    height: 200px;
+    background-size: cover;
+    background-position: center;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 1rem;
+    font-weight: 600;
+    font-size: 1.2rem;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
+}
+
+.book-title {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.book-author {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+
+
+
+
+/* ... inside your /css/style.css file ... */
+
+/* 
+=========================================
+    STUDENT LIBRARY RESPONSIVE STYLES
+=========================================
+*/
+
+/* On small screens, make the header text smaller and centered */
+@media (max-width: 767.98px) {
+    #library-view h1 {
+        font-size: 2rem;
+        /* Reduce the "Digital Library" title size */
+    }
+
+    #library-view .d-flex.justify-content-between {
+        flex-direction: column;
+        /* Stack the title and the welcome message/logout button */
+        text-align: center;
+    }
+
+    #library-view #logout-btn {
+        margin-top: 1rem;
+    }
+}
+
+/* 
+=========================================
+    UNIFIED RESPONSIVE TOGGLE LOGIC
+=========================================
+*/
+@media (min-width: 992px) {
+    .sidebar {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-left: var(--sidebar-width);
+    }
+
+    #sidebar-toggler {
+        display: none;
+    }
+}
+
+@media (max-width: 991.98px) {
+    .sidebar {
+        transform: translateX(calc(-1 * var(--sidebar-width)));
+    }
+
+    .main-content {
+        margin-left: 0;
+    }
+
+    #sidebar-toggler {
+        display: block;
+    }
+
+    .sidebar.toggled {
+        transform: translateX(0);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+    }
+}

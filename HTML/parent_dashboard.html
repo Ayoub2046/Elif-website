@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Parent Dashboard</title>
+    <link rel="icon" type="image/png" href="/images/ALIF.png">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        body {
+            background-color: #f4f7fc;
+        }
+
+        .dashboard-header {
+            background-color: #1cc88a;
+            color: white;
+            padding: 2rem;
+            border-radius: 0.5rem;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container py-5">
+        <div class="dashboard-header mb-4 d-flex justify-content-between align-items-center">
+            <div>
+                <h1 class="display-5 mb-0" id="parent-name">Welcome!</h1>
+                <p class="lead mb-0">Your Student's Progress at a Glance</p>
+            </div>
+            <button id="logout-btn" class="btn btn-light"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+        </div>
+
+        <div id="dashboard-content">
+            <!-- Content will be loaded here by the script -->
+        </div>
+    </div>
+    <!-- The final, correct script for parent_dashboard.html -->
+    <script>
+        document.addEventListener('DOMContentLoaded', async () => {
+            // --- 1. SECURITY CHECK (RUNS FIRST) ---
+            const activeUser = JSON.parse(sessionStorage.getItem('activeUser'));
+            if (!activeUser || activeUser.role !== 'Parent') {
+                // Use replace() to prevent the "back" button from working after logout
+                window.location.replace('portal_login.html');
+                return; // Stop the rest of the script from running
+            }
+
+            // --- 2. LOGOUT BUTTON LOGIC ---
+            document.getElementById('logout-btn').addEventListener('click', () => {
+                sessionStorage.removeItem('activeUser');
+                window.location.replace('portal_login.html'); // Use replace() here too
+            });
+
+            // --- 3. LOAD DASHBOARD DATA ---
+            const dashboardContent = document.getElementById('dashboard-content');
+            try {
+                const response = await fetch(`/api/parents/dashboard-details?email=${activeUser.email}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to load data.');
+                }
+                const data = await response.json();
+
+                document.getElementById('parent-name').textContent = `Welcome, ${data.parent.name}!`;
+
+                if (!data.child) {
+                    dashboardContent.innerHTML = `<div class="alert alert-warning">No student record is currently linked to your account. Please contact the administration.</div>`;
+                } else {
+                    let resultsHtml = '';
+                    if (data.results && Object.keys(data.results).length > 0) {
+                        resultsHtml = Object.entries(data.results).map(([subject, score]) => `
+                        <tr><td>${subject}</td><td>${score}%</td></tr>
+                    `).join('');
+                        resultsHtml += `<tr class="fw-bold table-light"><td>Overall GPA</td><td>${data.child.gpa || 'N/A'}</td></tr>`;
+                    } else {
+                        resultsHtml = `<tr><td colspan="2" class="text-center">No results have been posted yet.</td></tr>`;
+                    }
+
+                    dashboardContent.innerHTML = `
+                    <div class="card">
+                        <div class="card-header"><h4 class="mb-0">Report Card for ${data.child.name}</h4></div>
+                        <div class="card-body">
+                            <p><strong>Grade:</strong> ${data.child.grade}</p>
+                            <div class="table-responsive">
+                                <table class="table table-bordered">
+                                    <thead><tr><th>Subject</th><th>Score</th></tr></thead>
+                                    <tbody>${resultsHtml}</tbody>
+                                </table>
+                            </div>
+                            <h5>Teacher's Remarks</h5>
+                            <p class="fst-italic border p-3 rounded bg-light">${data.child.remarks || 'No remarks provided.'}</p>
+                        </div>
+                    </div>
+                `;
+                }
+
+            } catch (error) {
+                console.error(error);
+                dashboardContent.innerHTML = `<div class="alert alert-danger">Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+
+</body>
+
+</html>
