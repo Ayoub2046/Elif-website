@@ -168,11 +168,11 @@
                     return;
                 }
                 contactTbody.innerHTML = contactMessages.map(msg => `
-                <tr class="${msg.isRead ? '' : 'fw-bold'}" data-message-id="${msg.id}" style="cursor: pointer;">
-                    <td>${msg.firstName} ${msg.lastName || ''}<br><small class="text-muted">${msg.email}</small></td>
+                <tr class="${msg.isread ? '' : 'fw-bold'}" data-message-id="${msg.id}" style="cursor: pointer;">
+                    <td>${msg.firstname} ${msg.lastname || ''}<br><small class="text-muted">${msg.email}</small></td>
                     <td>${msg.subject || '(No Subject)'}</td>
-                    <td>${msg.submissionDate}</td>
-                    <td class="text-center">${msg.isRead ? '<span class="badge bg-secondary">Read</span>' : '<span class="badge bg-primary">New</span>'}</td>
+                    <td>${msg.submissiondate}</td>
+                    <td class="text-center">${msg.isread ? '<span class="badge bg-secondary">Read</span>' : '<span class="badge bg-primary">New</span>'}</td>
                 </tr>
             `).join('');
             }
@@ -185,12 +185,12 @@
                 if (!message) return;
 
                 document.getElementById('messageModalSubject').textContent = message.subject || '(No Subject)';
-                document.getElementById('messageModalFrom').textContent = `${message.firstName} ${message.lastName || ''} (${message.email})`;
-                document.getElementById('messageModalDate').textContent = message.submissionDate;
+                document.getElementById('messageModalFrom').textContent = `${message.firstname} ${message.lastname || ''} (${message.email})`;
+                document.getElementById('messageModalDate').textContent = message.submissiondate;
                 document.getElementById('messageModalBody').textContent = message.message;
                 messageViewModal.show();
 
-                if (!message.isRead) {
+                if (!message.isread) {
                     try {
                         await fetch(`${CONTACT_API_URL}/read/${messageId}`, { method: 'PUT' });
                         await fetchContactMessages();

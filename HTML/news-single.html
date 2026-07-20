@@ -75,8 +75,8 @@
                 // .replace(/\n/g, '<br>') converts newline characters from the textarea into HTML line breaks
                 container.innerHTML = `
                     <h1 class="display-5 fw-bold mb-3">${article.title}</h1>
-                    <p class="text-muted border-bottom pb-3 mb-4">Published on ${article.publishDate}</p>
-                    <img src="${article.imageUrl || '/images/default-news.jpg'}" class="img-fluid rounded shadow-sm mb-4" alt="${article.title}">
+                    <p class="text-muted border-bottom pb-3 mb-4">Published on ${article.publishdate}</p>
+                    <img src="${article.imageurl || '/images/default-news.jpg'}" class="img-fluid rounded shadow-sm mb-4" alt="${article.title}">
                     <div class="article-body fs-5">
                         ${article.content.replace(/\n/g, '<p></p>')}
                     </div>

@@ -1,36 +1,42 @@
 // Backend/routes/gallery.js
 
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
 // GET all gallery items
-router.get('/', (req, res) => {
-    const sql = `SELECT * FROM gallery_items ORDER BY id DESC`;
-    db.all(sql, [], (err, rows) => {
-        if (err) return res.status(500).json({ "error": err.message });
+router.get('/', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT * FROM gallery_items ORDER BY id DESC`);
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // POST a new gallery item
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { title, description, type, mediaUrl, category } = req.body;
     const uploadDate = new Date().toISOString().split('T')[0];
-    const sql = `INSERT INTO gallery_items (title, description, type, mediaUrl, category, uploadDate) VALUES (?, ?, ?, ?, ?, ?)`;
-    db.run(sql, [title, description, type, mediaUrl, category, uploadDate], function(err) {
-        if (err) return res.status(400).json({ "error": err.message });
-        res.status(201).json({ "id": this.lastID });
-    });
+    try {
+        const { rows } = await query(
+            `INSERT INTO gallery_items (title, description, type, mediaurl, category, uploaddate) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+            [title, description, type, mediaUrl, category, uploadDate]
+        );
+        res.status(201).json({ id: rows[0].id });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 // DELETE a gallery item
-router.delete('/:id', (req, res) => {
-    const sql = `DELETE FROM gallery_items WHERE id = ?`;
-    db.run(sql, [req.params.id], function(err) {
-        if (err) return res.status(400).json({ "error": err.message });
-        res.json({ "message": "deleted" });
-    });
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM gallery_items WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;

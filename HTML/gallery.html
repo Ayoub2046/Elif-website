@@ -76,8 +76,8 @@
                 }
                 container.innerHTML = items.map(item => {
                     const mediaElement = item.type === 'Video'
-                        ? `<iframe src="${item.mediaUrl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
-                        : `<img src="${item.mediaUrl}" class="card-img-top" alt="${item.title}">`;
+                        ? `<iframe src="${item.mediaurl}" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>`
+                        : `<img src="${item.mediaurl}" class="card-img-top" alt="${item.title}">`;
                     
                     return `
                     <div class="col-md-6 col-lg-4">
@@ -88,7 +88,7 @@
                                 ${item.description ? `<p class="card-text">${item.description}</p>` : ''}
                             </div>
                             <div class="card-footer text-muted">
-                                ${item.category || 'General'} - ${item.uploadDate}
+                                ${item.category || 'General'} - ${item.uploaddate}
                             </div>
                         </div>
                     </div>

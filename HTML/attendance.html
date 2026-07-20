@@ -9,29 +9,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        .status-buttons .btn {
-            margin: 0 2px;
+        .attendance-btns .btn { margin: 0 2px; }
+        .present-toggle {
+            border-color: #198754;
+            color: #198754;
+            background: transparent;
+            min-width: 90px;
         }
-
-        .status-buttons .btn.active {
-            color: #fff;
-            box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, .5);
-        }
-
-        .btn-outline-success.active {
+        .present-toggle.on {
             background-color: #198754;
             border-color: #198754;
+            color: #fff;
         }
-
-        .btn-outline-danger.active {
-            background-color: #dc3545;
-            border-color: #dc3545;
+        .leave-btn {
+            border-color: #ffc107;
+            color: #d4a017;
+            background: transparent;
+            min-width: 90px;
         }
-
-        .btn-outline-warning.active {
+        .leave-btn.on {
             background-color: #ffc107;
             border-color: #ffc107;
-            color: #000 !important;
+            color: #000;
         }
     </style>
 </head>
@@ -149,17 +148,15 @@
                     return;
                 }
                 tbody.innerHTML = students.map(s => {
-                    const presentActive = (s.status === 'Present' || !s.status) ? 'active' : '';
-                    const absentActive = s.status === 'Absent' ? 'active' : '';
-                    const lateActive = s.status === 'Late' ? 'active' : '';
+                    const isOnLeave = s.status === 'On-Leave';
+                    const isPresent = (!s.status || s.status === 'Present');
                     return `
                 <tr data-student-id="${s.id}">
                     <td>ELP${250000 + s.id}</td>
                     <td>${s.name}</td>
-                    <td class="text-center status-buttons" role="group">
-                        <button type="button" class="btn btn-sm btn-outline-success ${presentActive}" data-status="Present">Present</button>
-                        <button type="button" class="btn btn-sm btn-outline-danger ${absentActive}" data-status="Absent">Absent</button>
-                        <button type="button" class="btn btn-sm btn-outline-warning text-dark ${lateActive}" data-status="Late">Late</button>
+                    <td class="text-center attendance-btns" role="group">
+                        <button type="button" class="btn btn-sm present-toggle ${isPresent ? 'on' : ''}" data-status="${isPresent ? 'Present' : 'Absent'}">${isPresent ? 'Present' : 'Absent'}</button>
+                        <button type="button" class="btn btn-sm leave-btn ${isOnLeave ? 'on' : ''}" data-status="On-Leave">On-Leave</button>
                     </td>
                 </tr>`;
                 }).join('');
@@ -170,10 +167,24 @@
             });
 
             tbody.addEventListener('click', e => {
-                if (e.target.matches('.btn')) {
-                    const buttons = e.target.parentElement.querySelectorAll('.btn');
-                    buttons.forEach(btn => btn.classList.remove('active'));
-                    e.target.classList.add('active');
+                const btn = e.target.closest('.btn');
+                if (!btn) return;
+                const row = btn.closest('tr');
+                const toggle = row.querySelector('.present-toggle');
+                const leave = row.querySelector('.leave-btn');
+
+                if (btn.classList.contains('present-toggle')) {
+                    const isOn = toggle.classList.toggle('on');
+                    toggle.textContent = isOn ? 'Present' : 'Absent';
+                    toggle.dataset.status = isOn ? 'Present' : 'Absent';
+                    leave.classList.remove('on');
+                } else if (btn.classList.contains('leave-btn')) {
+                    const isOn = leave.classList.toggle('on');
+                    if (isOn) {
+                        toggle.classList.remove('on');
+                        toggle.textContent = 'Absent';
+                        toggle.dataset.status = 'Absent';
+                    }
                 }
             });
 
@@ -182,10 +193,11 @@
                 const records = [];
                 tbody.querySelectorAll('tr').forEach(row => {
                     const studentId = row.dataset.studentId;
-                    const activeBtn = row.querySelector('.btn.active');
-                    if (studentId && activeBtn) {
-                        records.push({ student_id: parseInt(studentId), status: activeBtn.dataset.status });
-                    }
+                    if (!studentId) return;
+                    const leaveBtn = row.querySelector('.leave-btn');
+                    const toggleBtn = row.querySelector('.present-toggle');
+                    const status = leaveBtn.classList.contains('on') ? 'On-Leave' : toggleBtn.dataset.status;
+                    records.push({ student_id: parseInt(studentId), status });
                 });
 
                 if (records.length === 0) {

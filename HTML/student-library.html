@@ -126,18 +126,24 @@
 
                 try {
                     const response = await fetch(`/api/results/${realDbId}`);
+                    if (!response.ok) throw new Error('ID_NOT_FOUND');
                     const studentData = await response.json();
-                    if (studentData.birthDate === passwordInput) {
+                    const dbBirthdate = studentData.birthdate ? (() => { const d = new Date(studentData.birthdate); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() : '';
+                    if (dbBirthdate === passwordInput) {
                         console.log("Checkpoint 3: Login successful. Preparing to fetch books.");
                         initialView.classList.add('d-none');
                         libraryView.classList.remove('d-none');
                         studentNameDisplay.textContent = `Welcome, ${studentData.name}`;
                         fetchBooks();
                     } else {
-                        throw new Error('Invalid password.');
+                        throw new Error('WRONG_PASSWORD');
                     }
                 } catch (error) {
-                    loginAlert.innerHTML = `<div class="alert alert-danger">Invalid Student ID or Password.</div>`;
+                    if (error.message === 'ID_NOT_FOUND') {
+                        loginAlert.innerHTML = `<div class="alert alert-danger">Student ID not found. Please check your ID.</div>`;
+                    } else {
+                        loginAlert.innerHTML = `<div class="alert alert-danger">Invalid Student ID or Password.</div>`;
+                    }
                 }
             });
             // --- THIS IS THE NEW CODE YOU ARE ADDING ---

@@ -186,16 +186,21 @@
                 try {
                     // Use the realDbId to fetch from the API
                     const response = await fetch(`${RESULTS_API_URL}/${realDbId}`);
-                    if (!response.ok) throw new Error('Student ID not found.');
+                    if (!response.ok) throw new Error('ID_NOT_FOUND');
                     const studentData = await response.json();
 
-                    if (studentData.birthDate === passwordInput) {
+                    const dbBirthdate = studentData.birthdate ? (() => { const d = new Date(studentData.birthdate); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; })() : '';
+                    if (dbBirthdate === passwordInput) {
                         displayResults(studentData);
                     } else {
-                        throw new Error('Invalid password.');
+                        throw new Error('WRONG_PASSWORD');
                     }
                 } catch (error) {
-                    loginAlert.innerHTML = `<div class="alert alert-danger">Invalid Student ID or Password.</div>`;
+                    if (error.message === 'ID_NOT_FOUND') {
+                        loginAlert.innerHTML = `<div class="alert alert-danger">Student ID not found. Please check your ID.</div>`;
+                    } else {
+                        loginAlert.innerHTML = `<div class="alert alert-danger">Invalid Student ID or Password.</div>`;
+                    }
                     console.error("Login Error:", error.message);
                 }
             });

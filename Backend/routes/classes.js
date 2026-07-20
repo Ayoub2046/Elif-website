@@ -1,72 +1,59 @@
 // Backend/routes/classes.js
 
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-// GET all classes, and join with the teachers table to get the teacher's name
-router.get('/', (req, res) => {
-    const sql = `
-        SELECT
-            c.id,
-            c.name,
-            c.teacherId,
-            t.name AS teacherName,
-            c.room,
-            c.students,
-            c.capacity,
-            c.color
-        FROM classes c
-        LEFT JOIN teachers t ON c.teacherId = t.id
-    `;
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ "error": err.message });
-            return;
-        }
+// GET all classes (joined with teacher name)
+router.get('/', async (req, res) => {
+    try {
+        const { rows } = await query(`
+            SELECT c.id, c.name, c.teacherid, t.name AS "teacherName", c.room, c.students, c.capacity, c.color
+            FROM classes c
+            LEFT JOIN users t ON c.teacherid = t.id AND t.role = 'Teacher'
+        `);
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // POST (add) a new class
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { name, teacherId, room, students, capacity, color } = req.body;
-    const sql = `INSERT INTO classes (name, teacherId, room, students, capacity, color) VALUES (?, ?, ?, ?, ?, ?)`;
-    db.run(sql, [name, teacherId, room, students, capacity, color], function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.status(201).json({ "id": this.lastID, ...req.body });
-    });
+    try {
+        const { rows } = await query(
+            `INSERT INTO classes (name, teacherid, room, students, capacity, color) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+            [name, teacherId, room, students, capacity, color]
+        );
+        res.status(201).json({ id: rows[0].id, ...req.body });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 // PUT (update) a class
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const { name, teacherId, room, students, capacity, color } = req.body;
-    const sql = `UPDATE classes SET
-                    name = ?, teacherId = ?, room = ?,
-                    students = ?, capacity = ?, color = ?
-                 WHERE id = ?`;
-    db.run(sql, [name, teacherId, room, students, capacity, color, req.params.id], function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "success", "changes": this.changes });
-    });
+    try {
+        await query(
+            `UPDATE classes SET name = $1, teacherid = $2, room = $3, students = $4, capacity = $5, color = $6 WHERE id = $7`,
+            [name, teacherId, room, students, capacity, color, req.params.id]
+        );
+        res.json({ message: 'success' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 // DELETE a class
-router.delete('/:id', (req, res) => {
-    const sql = `DELETE FROM classes WHERE id = ?`;
-    db.run(sql, [req.params.id], function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "deleted", "changes": this.changes });
-    });
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM classes WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;

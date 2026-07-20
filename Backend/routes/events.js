@@ -1,68 +1,55 @@
 // Backend/routes/events.js
 
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-// --- GET all events ---
-router.get('/', (req, res) => {
-    const sql = `SELECT * FROM events`;
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ "error": err.message });
-            return;
-        }
-        // FullCalendar expects properties like 'start' and 'end', which match our table.
-        // It also uses 'backgroundColor' and 'borderColor'.
+// GET all events
+router.get('/', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT * FROM events`);
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// --- POST (add) a new event ---
-router.post('/', (req, res) => {
+// POST (add) a new event
+router.post('/', async (req, res) => {
     const { title, start, end, backgroundColor, borderColor } = req.body;
-    const sql = `INSERT INTO events (title, start, "end", backgroundColor, borderColor) VALUES (?, ?, ?, ?, ?)`;
-    const params = [title, start, end || null, backgroundColor, borderColor];
-    db.run(sql, params, function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.status(201).json({ "id": this.lastID });
-    });
+    try {
+        const { rows } = await query(
+            `INSERT INTO events (title, start, "end", backgroundcolor, bordercolor) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+            [title, start, end || null, backgroundColor, borderColor]
+        );
+        res.status(201).json({ id: rows[0].id });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
-// --- PUT (update) an event ---
-// This is for when you drag and drop an event to a new date.
-router.put('/:id', (req, res) => {
+// PUT (update) an event
+router.put('/:id', async (req, res) => {
     const { title, start, end, backgroundColor, borderColor } = req.body;
-    const sql = `UPDATE events SET
-                    title = ?,
-                    start = ?,
-                    "end" = ?,
-                    backgroundColor = ?,
-                    borderColor = ?
-                 WHERE id = ?`;
-    const params = [title, start, end || null, backgroundColor, borderColor, req.params.id];
-    db.run(sql, params, function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "success", "changes": this.changes });
-    });
+    try {
+        await query(
+            `UPDATE events SET title = $1, start = $2, "end" = $3, backgroundcolor = $4, bordercolor = $5 WHERE id = $6`,
+            [title, start, end || null, backgroundColor, borderColor, req.params.id]
+        );
+        res.json({ message: 'success' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
-// --- DELETE an event ---
-router.delete('/:id', (req, res) => {
-    const sql = `DELETE FROM events WHERE id = ?`;
-    db.run(sql, [req.params.id], function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "deleted", "changes": this.changes });
-    });
+// DELETE an event
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM events WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;

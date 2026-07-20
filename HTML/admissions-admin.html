@@ -105,11 +105,11 @@
             tbody.innerHTML = applications.map(app => `
                 <tr>
                     <td>${app.name}</td>
-                    <td>${app.gradeToEnroll}</td>
-                    <td>${app.parentName} (${app.parentEmail})</td>
-                    <td>${app.submissionDate}</td>
+                    <td>${app.gradetoenroll}</td>
+                    <td>${app.parentname} (${app.parentemail})</td>
+                    <td>${app.submissiondate}</td>
                     <td>
-                        ${app.applicationLetterPath ? `<a href="/${app.applicationLetterPath}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>` : 'None'}
+                        ${app.applicationletterpath ? `<a href="/${app.applicationletterpath}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>` : 'None'}
                     </td>
                     <td class="text-center">
                         <span class="badge ${statusColors[app.status] || 'bg-secondary'}">${app.status}</span>

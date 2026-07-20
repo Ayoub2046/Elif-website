@@ -1,74 +1,59 @@
 // Backend/routes/fees.js
 
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-// --- GET all fee records ---
-// We JOIN with the students table to get the student's name
-router.get('/', (req, res) => {
-    const sql = `
-        SELECT
-            f.id,
-            f.amount,
-            f.status,
-            f.dueDate,
-            s.name AS studentName
-        FROM fees f
-        JOIN students s ON f.studentId = s.id
-    `;
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ "error": err.message });
-            return;
-        }
+// GET all fee records (joined with student name)
+router.get('/', async (req, res) => {
+    try {
+        const { rows } = await query(`
+            SELECT f.id, f.amount, f.status, f.duedate, s.name AS "studentName"
+            FROM fees f
+            JOIN students s ON f.studentid = s.id
+        `);
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// --- POST (add) a new fee record ---
-router.post('/', (req, res) => {
+// POST (add) a new fee record
+router.post('/', async (req, res) => {
     const { studentId, amount, dueDate, status } = req.body;
-    const sql = `INSERT INTO fees (studentId, amount, dueDate, status) VALUES (?, ?, ?, ?)`;
-    const params = [studentId, amount, dueDate, status];
-    db.run(sql, params, function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.status(201).json({ "id": this.lastID });
-    });
+    try {
+        const { rows } = await query(
+            `INSERT INTO fees (studentid, amount, duedate, status) VALUES ($1, $2, $3, $4) RETURNING id`,
+            [studentId, amount, dueDate, status]
+        );
+        res.status(201).json({ id: rows[0].id });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
-// --- PUT (update) a fee record ---
-router.put('/:id', (req, res) => {
+// PUT (update) a fee record
+router.put('/:id', async (req, res) => {
     const { studentId, amount, dueDate, status } = req.body;
-    const sql = `UPDATE fees SET
-                    studentId = ?,
-                    amount = ?,
-                    dueDate = ?,
-                    status = ?
-                 WHERE id = ?`;
-    const params = [studentId, amount, dueDate, status, req.params.id];
-    db.run(sql, params, function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "success", "changes": this.changes });
-    });
+    try {
+        await query(
+            `UPDATE fees SET studentid = $1, amount = $2, duedate = $3, status = $4 WHERE id = $5`,
+            [studentId, amount, dueDate, status, req.params.id]
+        );
+        res.json({ message: 'success' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
-// --- DELETE a fee record ---
-router.delete('/:id', (req, res) => {
-    const sql = `DELETE FROM fees WHERE id = ?`;
-    db.run(sql, [req.params.id], function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "deleted", "changes": this.changes });
-    });
+// DELETE a fee record
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM fees WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;

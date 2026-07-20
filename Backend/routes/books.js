@@ -1,41 +1,55 @@
 // Backend/routes/books.js
+
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-router.get('/', (req, res) => {
-    const sql = `SELECT * FROM books ORDER BY id DESC`;
-    db.all(sql, [], (err, rows) => {
-        if (err) return res.status(500).json({ "error": err.message });
+// GET all books
+router.get('/', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT * FROM books ORDER BY id DESC`);
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-router.post('/', (req, res) => {
+// POST (add) a new book
+router.post('/', async (req, res) => {
     const { title, author, category, cover, digitalLink } = req.body;
-    const sql = `INSERT INTO books (title, author, category, cover, status, digitalLink) VALUES (?, ?, ?, ?, ?, ?)`;
-    const params = [title, author, category, cover, 'Available', digitalLink];
-    db.run(sql, params, function(err) {
-        if (err) return res.status(400).json({ "error": err.message });
-        res.status(201).json({ "id": this.lastID });
-    });
+    try {
+        const { rows } = await query(
+            `INSERT INTO books (title, author, category, cover, status, digitallink) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+            [title, author, category, cover, 'Available', digitalLink]
+        );
+        res.status(201).json({ id: rows[0].id });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
-router.put('/:id', (req, res) => {
+// PUT (update) a book
+router.put('/:id', async (req, res) => {
     const { title, author, category, cover, status, checkedOutTo, digitalLink } = req.body;
-    const sql = `UPDATE books SET title = ?, author = ?, category = ?, cover = ?, status = ?, checkedOutTo = ?, digitalLink = ? WHERE id = ?`;
-    const params = [title, author, category, cover, status, checkedOutTo, digitalLink, req.params.id];
-    db.run(sql, params, function(err) {
-        if (err) return res.status(400).json({ "error": err.message });
-        res.json({ "message": "success", "changes": this.changes });
-    });
+    try {
+        await query(
+            `UPDATE books SET title = $1, author = $2, category = $3, cover = $4, status = $5, checkedoutto = $6, digitallink = $7 WHERE id = $8`,
+            [title, author, category, cover, status, checkedOutTo, digitalLink, req.params.id]
+        );
+        res.json({ message: 'success' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
-router.delete('/:id', (req, res) => {
-    db.run(`DELETE FROM books WHERE id = ?`, [req.params.id], function(err) {
-        if (err) return res.status(400).json({ "error": err.message });
-        res.json({ "message": "deleted" });
-    });
+// DELETE a book
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM books WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;

@@ -3,94 +3,94 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-// --- Registration Route (Corrected) ---
+// --- Registration Route ---
 router.post('/register', async (req, res) => {
     const { name, email, password, role } = req.body;
     if (!name || !email || !password || !role) {
-        return res.status(400).json({ "error": "All fields are required." });
+        return res.status(400).json({ error: 'All fields are required.' });
     }
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
-        const sql = `INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)`;
-        const params = [name, email, hashedPassword, role];
-        db.run(sql, params, function(err) {
-            if (err) {
-                if (err.message.includes("UNIQUE constraint failed")) {
-                    return res.status(409).json({ "error": "This email is already registered." });
-                }
-                return res.status(400).json({ "error": "Could not register user." });
-            }
-            return res.status(201).json({ "message": "User registered successfully!" });
-        });
-    } catch (error) {
-        return res.status(500).json({ "error": "An error occurred during registration." });
+        await query(
+            `INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)`,
+            [name, email, hashedPassword, role]
+        );
+        return res.status(201).json({ message: 'User registered successfully!' });
+    } catch (err) {
+        if (err.code === '23505') {
+            return res.status(409).json({ error: 'This email is already registered.' });
+        }
+        return res.status(500).json({ error: 'An error occurred during registration.' });
     }
 });
 
 // --- Login Route ---
-router.post('/login', (req, res) => {
+router.post('/login', async (req, res) => {
     const { email, password } = req.body;
-    db.get(`SELECT * FROM users WHERE email = ?`, [email], async (err, user) => {
-        if (err) return res.status(500).json({ "message": "Database error." });
-        if (!user) return res.status(401).json({ "message": "Invalid credentials." });
-        try {
-            const match = await bcrypt.compare(password, user.password);
-            if (match) return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
-            else return res.status(401).json({ "message": "Invalid credentials." });
-        } catch (bcryptError) { return res.status(500).json({ "message": "Server login error." }); }
-    });
+    try {
+        const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [email]);
+        const user = rows[0];
+        if (!user) return res.status(401).json({ message: 'Invalid credentials.' });
+        const match = await bcrypt.compare(password, user.password);
+        if (match) return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        if (password === user.password) {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            await query(`UPDATE users SET password = $1 WHERE id = $2`, [hashedPassword, user.id]);
+            return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        }
+        return res.status(401).json({ message: 'Invalid credentials.' });
+    } catch (err) {
+        return res.status(500).json({ message: 'Database error.' });
+    }
 });
 
 // --- Forgot Password Route ---
-router.post('/forgot', (req, res) => {
+router.post('/forgot', async (req, res) => {
     const { email } = req.body;
-    db.get(`SELECT * FROM users WHERE email = ?`, [email], (err, user) => {
-        if (err || !user) return res.status(200).json({ message: "If an account with that email exists, a link will be sent." });
+    try {
+        const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [email]);
+        const user = rows[0];
+        if (!user) return res.status(200).json({ message: 'If an account with that email exists, a link will be sent.' });
         const token = crypto.randomBytes(20).toString('hex');
-        const expires = Date.now() + 3600000; // This value is now ignored during validation
-        db.run(`UPDATE users SET resetPasswordToken = ?, resetPasswordExpires = ? WHERE email = ?`, [token, expires, email], (err) => {
-            if (err) return res.status(500).json({ error: "Error setting token." });
-            const resetLink = `http://localhost:3000/HTML/reset-password.html?token=${token}`;
-            return res.json({ message: "Reset link generated.", resetLink: resetLink });
-        });
-    });
+        const expires = Date.now() + 3600000;
+        await query(`UPDATE users SET resetpasswordtoken = $1, resetpasswordexpires = $2 WHERE email = $3`, [token, expires, email]);
+        const resetLink = `http://localhost:3000/HTML/reset-password.html?token=${token}`;
+        return res.json({ message: 'Reset link generated.', resetLink });
+    } catch (err) {
+        return res.status(500).json({ error: 'Error setting token.' });
+    }
 });
 
-// --- RESET PASSWORD VALIDATION ROUTE (Expiration check removed) ---
-router.get('/reset/:token', (req, res) => {
-    const { token } = req.params;
-    const findTokenSql = `SELECT * FROM users WHERE resetPasswordToken = ?`; // <-- CHANGE IS HERE
-    db.get(findTokenSql, [token], (err, user) => { // <-- CHANGE IS HERE
-        if (err || !user) {
-            return res.status(400).json({ error: "Password reset token is invalid." });
-        }
-        return res.status(200).json({ message: "Token is valid." });
-    });
+// --- Reset Password Validation Route ---
+router.get('/reset/:token', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT * FROM users WHERE resetpasswordtoken = $1`, [req.params.token]);
+        if (!rows[0]) return res.status(400).json({ error: 'Password reset token is invalid.' });
+        return res.status(200).json({ message: 'Token is valid.' });
+    } catch (err) {
+        return res.status(500).json({ error: 'Server error.' });
+    }
 });
 
-// --- UPDATE PASSWORD ROUTE (Expiration check removed) ---
+// --- Update Password Route ---
 router.post('/update-password', async (req, res) => {
     const { token, password } = req.body;
-    const findTokenSql = `SELECT * FROM users WHERE resetPasswordToken = ?`; // <-- CHANGE IS HERE
-    db.get(findTokenSql, [token], async (err, user) => { // <-- CHANGE IS HERE
-        if (err || !user) {
-            return res.status(400).json({ error: "Token is invalid." });
-        }
-        try {
-            const hashedPassword = await bcrypt.hash(password, 10);
-            // We still clear the token after use.
-            const updateUserSql = `UPDATE users SET password = ?, resetPasswordToken = NULL, resetPasswordExpires = NULL WHERE id = ?`;
-            db.run(updateUserSql, [hashedPassword, user.id], (err) => {
-                if (err) return res.status(500).json({ error: "Error updating password." });
-                res.status(200).json({ message: "Password has been updated successfully!" });
-            });
-        } catch (error) {
-            res.status(500).json({ "error": "An error occurred while updating the password." });
-        }
-    });
+    try {
+        const { rows } = await query(`SELECT * FROM users WHERE resetpasswordtoken = $1`, [token]);
+        const user = rows[0];
+        if (!user) return res.status(400).json({ error: 'Token is invalid.' });
+        const hashedPassword = await bcrypt.hash(password, 10);
+        await query(
+            `UPDATE users SET password = $1, resetpasswordtoken = NULL, resetpasswordexpires = NULL WHERE id = $2`,
+            [hashedPassword, user.id]
+        );
+        return res.status(200).json({ message: 'Password has been updated successfully!' });
+    } catch (err) {
+        return res.status(500).json({ error: 'An error occurred while updating the password.' });
+    }
 });
 
 module.exports = router;

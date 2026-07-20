@@ -116,7 +116,7 @@
             }
             classContainer.innerHTML = classes.map(c => {
                 const progress = c.capacity > 0 ? (c.students / c.capacity) * 100 : 0;
-                const assignedTeacher = teachers.find(t => t.id === c.teacherId);
+                const assignedTeacher = teachers.find(t => t.id === c.teacherid);
                 const teacherName = assignedTeacher ? assignedTeacher.name : 'Unassigned';
                 const teacherImage = assignedTeacher && assignedTeacher.image ? assignedTeacher.image : '/images/ALIF.png';
 

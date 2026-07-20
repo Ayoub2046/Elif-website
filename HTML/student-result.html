@@ -59,7 +59,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // [UPDATED] Check if the student exists and if the password matches their enrollmentDate
         if (student && student.enrollmentDate === passwordInput) {
             sessionStorage.setItem('viewingStudentId', student.id); // Save permission ticket
-            window.location.href = 'student_result.html';
+            window.location.href = 'student-result.html';
         } else {
             loginAlert.innerHTML = `<div class="alert alert-danger">Invalid Student ID or Password.</div>`;
         }

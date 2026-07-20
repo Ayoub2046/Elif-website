@@ -214,7 +214,7 @@
                     <td>${f.studentName}</td>
                     <td>$${f.amount.toFixed(2)}</td>
                     <td><span class="badge ${statusColors[f.status]}">${f.status}</span></td>
-                    <td>${f.dueDate}</td>
+                    <td>${f.duedate}</td>
                     <td class="action-buttons">
                         <button class="btn btn-sm btn-edit" data-id="${f.id}"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-sm btn-delete" data-id="${f.id}"><i class="fas fa-trash"></i></button>
@@ -254,9 +254,9 @@
                     populateStudentSelect();
                     // Find the original fee record to get the studentId
                     const originalFee = fees.find(f => f.id === id);
-                    feeForm.elements.studentId.value = originalFee.studentId || '';
+                    feeForm.elements.studentId.value = originalFee.studentid || '';
                     feeForm.elements.amount.value = fee.amount;
-                    feeForm.elements.dueDate.value = fee.dueDate;
+                    feeForm.elements.dueDate.value = fee.duedate;
                     feeForm.elements.status.value = fee.status;
                     feeModal.show();
                 } else if (button.classList.contains('btn-delete')) {

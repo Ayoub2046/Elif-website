@@ -1,70 +1,64 @@
 // Backend/routes/results.js
 
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-// --- GET all results for a specific student ---
-router.get('/:studentId', (req, res) => {
-    // This gets the student's main details and their subject results
-    const studentSql = `SELECT * FROM students WHERE id = ?`;
-    const resultsSql = `SELECT subject, score FROM results WHERE student_id = ?`;
-
-    db.get(studentSql, [req.params.studentId], (err, student) => {
-        if (err) return res.status(500).json({ "error": err.message });
-        if (!student) return res.status(404).json({ "error": "Student not found" });
-
-        db.all(resultsSql, [req.params.studentId], (err, subjects) => {
-            if (err) return res.status(500).json({ "error": err.message });
-            
-            // Combine the student details and their subjects into one object
-            const fullResult = {
-                ...student,
-                subjects: subjects.reduce((obj, item) => {
-                    obj[item.subject] = item.score;
-                    return obj;
-                }, {})
-            };
-            res.json(fullResult);
-        });
-    });
-});
-
-
-// --- POST (Save) all results for a student ---
-// This is a complex "upsert" (update or insert) operation.
-router.post('/:studentId', (req, res) => {
-    const { studentId } = req.params;
-    const { gpa, remarks, subjects } = req.body;
-
-    // We start a transaction to make sure all queries succeed or none do.
-    db.serialize(() => {
-        db.run("BEGIN TRANSACTION");
-
-        // 1. Update the student's main details (gpa, remarks)
-        const updateStudentSql = `UPDATE students SET gpa = ?, remarks = ? WHERE id = ?`;
-        db.run(updateStudentSql, [gpa, remarks, studentId]);
-
-        // 2. Delete all old subject scores for this student to prevent duplicates
-        const deleteResultsSql = `DELETE FROM results WHERE student_id = ?`;
-        db.run(deleteResultsSql, [studentId]);
-
-        // 3. Insert the new subject scores
-        const insertResultSql = `INSERT INTO results (student_id, subject, score) VALUES (?, ?, ?)`;
-        for (const subject in subjects) {
-            db.run(insertResultSql, [studentId, subject, subjects[subject]]);
+// GET all results for a specific student
+router.get('/:studentId', async (req, res) => {
+    const studentId = parseInt(req.params.studentId);
+    if (isNaN(studentId)) return res.status(400).json({ error: 'Invalid student ID' });
+    try {
+        const { rows: studentRows } = await query(`SELECT * FROM students WHERE id = $1`, [studentId]);
+        const student = studentRows[0];
+        if (!student) {
+            console.log(`Results lookup failed: student id=${studentId} not found`);
+            return res.status(404).json({ error: 'Student not found' });
         }
 
-        // 4. Commit the transaction
-        db.run("COMMIT", (err) => {
-            if (err) {
-                db.run("ROLLBACK"); // Undo changes if something went wrong
-                res.status(400).json({ "error": err.message });
-                return;
-            }
-            res.status(200).json({ "message": "Results saved successfully" });
-        });
-    });
+        let subjects = [];
+        try {
+            const subjectsRes = await query(`SELECT subject, score FROM results WHERE student_id = $1`, [studentId]);
+            subjects = subjectsRes.rows;
+        } catch (e) {
+            // results table may not exist yet
+        }
+
+        const fullResult = {
+            ...student,
+            subjects: subjects.reduce((obj, item) => {
+                obj[item.subject] = item.score;
+                return obj;
+            }, {})
+        };
+        res.json(fullResult);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST (save) all results for a student
+router.post('/:studentId', async (req, res) => {
+    const { studentId } = req.params;
+    const { gpa, remarks, subjects } = req.body;
+    try {
+        // 1. Update student's gpa and remarks
+        await query(`UPDATE students SET gpa = $1, remarks = $2 WHERE id = $3`, [gpa, remarks, studentId]);
+
+        // 2. Delete all old results for this student
+        await query(`DELETE FROM results WHERE student_id = $1`, [studentId]);
+
+        // 3. Insert new subject scores
+        for (const subject in subjects) {
+            await query(
+                `INSERT INTO results (student_id, subject, score) VALUES ($1, $2, $3)`,
+                [studentId, subject, subjects[subject]]
+            );
+        }
+        res.status(200).json({ message: 'Results saved successfully' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;

@@ -1,51 +1,41 @@
 // Backend/routes/users.js
 
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-// This file provides the API for managing users (Admins, Teachers, Parents)
-
-// GET all users
-router.get('/', (req, res) => {
-    // We select all fields EXCEPT the password for security.
-    const sql = `SELECT id, name, email, role FROM users`;
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ "error": err.message });
-            return;
-        }
+// GET all users (without password)
+router.get('/', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT id, name, email, role FROM users`);
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// NOTE: We don't need a POST (add) route here because users are added
-// through the /api/auth/register endpoint. Admins will add users
-// through a modal that mimics the registration form.
-
 // PUT (update) a user's role or name
-router.put('/:id', (req, res) => {
+router.put('/:id', async (req, res) => {
     const { name, email, role } = req.body;
-    const sql = `UPDATE users SET name = ?, email = ?, role = ? WHERE id = ?`;
-    db.run(sql, [name, email, role, req.params.id], function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "success", "changes": this.changes });
-    });
+    try {
+        await query(
+            `UPDATE users SET name = $1, email = $2, role = $3 WHERE id = $4`,
+            [name, email, role, req.params.id]
+        );
+        res.json({ message: 'success' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 // DELETE a user
-router.delete('/:id', (req, res) => {
-    const sql = `DELETE FROM users WHERE id = ?`;
-    db.run(sql, [req.params.id], function(err) {
-        if (err) {
-            res.status(400).json({ "error": err.message });
-            return;
-        }
-        res.json({ "message": "deleted", "changes": this.changes });
-    });
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM users WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;

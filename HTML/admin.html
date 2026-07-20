@@ -118,9 +118,9 @@ document.addEventListener('DOMContentLoaded', () => {
                     <td>ELP${250000 + s.id}</td>
                     <td>${s.name}</td>
                     <td>${s.grade}</td>
-                    <td>${s.enrollmentDate}</td>
-                    <td>${s.birthDate}</td>
-                    <td>${s.attendance ? s.attendance.toFixed(0) + '%' : '-'}</td>
+                    <td>${s.enrollmentdate ? new Date(s.enrollmentdate).toLocaleDateString() : '-'}</td>
+                    <td>${s.birthdate ? new Date(s.birthdate).toLocaleDateString() : '-'}</td>
+                    <td>${s.attendance != null ? Number(s.attendance).toFixed(0) + '%' : '-'}</td>
                     <td class="action-buttons">
                         <a href="student.html" class="btn btn-sm btn-outline-primary" title="Manage All Students"><i class="fas fa-external-link-alt"></i></a>
                     </td>
@@ -130,7 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Fetch initial data from the server
     fetch(API_URL)
-        .then(res => res.json())
+        .then(res => {
+            if (!res.ok) throw new Error('Server returned an error');
+            return res.json();
+        })
         .then(data => {
             // Update summary cards
             document.getElementById('total-students-display').textContent = data.totalStudents;

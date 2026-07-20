@@ -1,5 +1,6 @@
 
 // backend/server.js
+require('dotenv').config();
 
 const express = require('express');
 const cors = require('cors');
@@ -17,29 +18,7 @@ app.use(express.json());
 const projectRoot = path.join(__dirname, '..');
 app.use(express.static(projectRoot));
 app.use('/uploads', express.static(path.join(projectRoot, 'uploads')));
-const studentRoutes = require('./routes/students.js');
-const authRoutes = require('./routes/auth.js');
-const teacherRoutes = require('./routes/teachers.js');
-const userRoutes = require('./routes/users.js');
-const classRoutes = require('./routes/classes.js');
-const feeRoutes = require('./routes/fees.js');
-const eventRoutes = require('./routes/events.js');
-const bookRoutes = require('./routes/books.js');
-const contentRoutes = require('./routes/content.js');
-const resultRoutes = require('./routes/results.js');
-const messageRoutes = require('./routes/messages.js');
-const reportRoutes = require('./routes/reports.js');
-const dashboardRoutes = require('./routes/dashboard.js');
-const attendanceRoutes = require('./routes/attendance.js');
-const admissionRoutes = require('./routes/admissions.js');
-const newsRoutes = require('./routes/news.js');
-const testimonialRoutes = require('./routes/testimonials.js');
-const contactRoutes = require('./routes/contact.js');
-const galleryRoutes = require('./routes/gallery.js');
-const parentRoutes = require('./routes/parents.js');
-
 // --- 2. API Routes ---
-// This method of requiring and using routes is clean and reliable.
 app.use('/api/students', require('./routes/students.js'));
 app.use('/api/auth', require('./routes/auth.js'));
 app.use('/api/teachers', require('./routes/teachers.js'));
@@ -61,11 +40,44 @@ app.use('/api/contact', require('./routes/contact.js'));
 app.use('/api/gallery', require('./routes/gallery.js'));
 app.use('/api/parents', require('./routes/parents.js'));
 
+// --- DIAGNOSTIC ROUTE: shows real column names from Supabase tables ---
+const { query } = require('./database');
+app.get('/api/diagnose', async (req, res) => {
+    try {
+        const { rows } = await query(`
+            SELECT table_name, column_name, data_type
+            FROM information_schema.columns
+            WHERE table_schema = 'public'
+            ORDER BY table_name, ordinal_position
+        `);
+        const tables = rows.reduce((acc, r) => {
+            if (!acc[r.table_name]) acc[r.table_name] = [];
+            acc[r.table_name].push({ column: r.column_name, type: r.data_type });
+            return acc;
+        }, {});
+        res.json(tables);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// --- LIST ALL TABLE NAMES ---
+app.get('/api/tables', async (req, res) => {
+    try {
+        const { rows } = await query(`
+            SELECT table_name, 
+                   (SELECT COUNT(*) FROM information_schema.columns c WHERE c.table_name = t.table_name AND c.table_schema = 'public') AS column_count
+            FROM information_schema.tables t
+            WHERE table_schema = 'public'
+            ORDER BY table_name
+        `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 // --- 3. Static File Serving ---
-// const projectRoot = path.join(__dirname, '..');
-app.use(express.static(projectRoot));
-app.use('/uploads', express.static(path.join(projectRoot, 'uploads')));
 
 // --- 4. Main Homepage Route ---
 app.get('/', (req, res) => {

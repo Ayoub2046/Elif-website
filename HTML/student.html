@@ -132,6 +132,8 @@
                 }
             }
 
+            function formatDate(d) { if (!d) return '-'; try { return new Date(d).toLocaleDateString('en-CA'); } catch { return d; } }
+
             function renderStudents() {
                 const tbody = document.getElementById('student-table-body');
                 if (students.length === 0) {
@@ -143,8 +145,8 @@
                     <td>ELP${250000 + s.id}</td>
                     <td>${s.name}</td>
                     <td>${s.grade}</td>
-                    <td>${s.enrollmentDate}</td>
-                    <td>${s.birthDate}</td>
+                    <td>${formatDate(s.enrollmentdate)}</td>
+                    <td>${formatDate(s.birthdate)}</td>
                     <td class="action-buttons">
                         <button class="btn btn-sm btn-view" data-id="${s.id}"><i class="fas fa-eye"></i></button>
                         <button class="btn btn-sm btn-edit" data-id="${s.id}"><i class="fas fa-edit"></i></button>
@@ -174,8 +176,8 @@
                     studentForm.elements.name.value = student.name;
                     studentForm.elements.grade.value = student.grade;
                     studentForm.elements.attendance.value = student.attendance || '';
-                    studentForm.elements.enrollmentDate.value = student.enrollmentDate;
-                    studentForm.elements.birthDate.value = student.birthDate;
+                    studentForm.elements.enrollmentDate.value = student.enrollmentdate;
+                    studentForm.elements.birthDate.value = student.birthdate;
                     studentModal.show();
                 } else if (button.classList.contains('btn-delete')) {
                     if (confirm(`Are you sure you want to delete ${student.name}?`)) {
@@ -183,8 +185,8 @@
                     }
                 } else if (button.classList.contains('btn-view')) {
                     sessionStorage.setItem('viewingStudentId', student.id);
-                    sessionStorage.setItem('viewingStudentBirthDate', student.birthDate);
-                    window.open('student_result.html', '_blank');
+                    sessionStorage.setItem('viewingStudentBirthDate', student.birthdate);
+                    window.open('student-result.html', '_blank');
                 }
             });
 

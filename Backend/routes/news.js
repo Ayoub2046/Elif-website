@@ -1,46 +1,53 @@
 // Backend/routes/news.js
 
 const express = require('express');
-const db = require('../database.js');
+const { query } = require('../database.js');
 const router = express.Router();
 
-// GET all news articles, newest first
-router.get('/', (req, res) => {
-    const sql = `SELECT * FROM news ORDER BY id DESC`;
-    db.all(sql, [], (err, rows) => {
-        if (err) return res.status(500).json({ "error": err.message });
+// GET all news articles
+router.get('/', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT * FROM news ORDER BY id DESC`);
         res.json(rows);
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
-// GET a single news article by its ID
-router.get('/:id', (req, res) => {
-    const sql = `SELECT * FROM news WHERE id = ?`;
-    db.get(sql, [req.params.id], (err, row) => {
-        if (err) return res.status(500).json({ "error": err.message });
-        if (!row) return res.status(404).json({ "error": "Article not found" });
-        res.json(row);
-    });
+// GET a single news article by ID
+router.get('/:id', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT * FROM news WHERE id = $1`, [req.params.id]);
+        if (!rows[0]) return res.status(404).json({ error: 'Article not found' });
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 // POST a new news article
-router.post('/', (req, res) => {
+router.post('/', async (req, res) => {
     const { title, summary, imageUrl, content } = req.body;
     const publishDate = new Date().toISOString().split('T')[0];
-    const sql = `INSERT INTO news (title, summary, imageUrl, content, publishDate) VALUES (?, ?, ?, ?, ?)`;
-    db.run(sql, [title, summary, imageUrl, content, publishDate], function(err) {
-        if (err) return res.status(400).json({ "error": err.message });
-        res.status(201).json({ "id": this.lastID });
-    });
+    try {
+        const { rows } = await query(
+            `INSERT INTO news (title, summary, imageurl, content, publishdate) VALUES ($1, $2, $3, $4, $5) RETURNING id`,
+            [title, summary, imageUrl, content, publishDate]
+        );
+        res.status(201).json({ id: rows[0].id });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 // DELETE a news article
-router.delete('/:id', (req, res) => {
-    const sql = `DELETE FROM news WHERE id = ?`;
-    db.run(sql, [req.params.id], function(err) {
-        if (err) return res.status(400).json({ "error": err.message });
-        res.json({ "message": "deleted" });
-    });
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM news WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
 });
 
 module.exports = router;
