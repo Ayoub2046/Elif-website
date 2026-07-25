@@ -40,8 +40,25 @@ app.use('/api/contact', require('./routes/contact.js'));
 app.use('/api/gallery', require('./routes/gallery.js'));
 app.use('/api/parents', require('./routes/parents.js'));
 
-// --- DIAGNOSTIC ROUTE: shows real column names from Supabase tables ---
+// --- Auto-create class_students junction table if it doesn't exist ---
 const { query } = require('./database');
+(async () => {
+    try {
+        await query(`
+            CREATE TABLE IF NOT EXISTS class_students (
+                class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+                student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+                assigned_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (class_id, student_id)
+            )
+        `);
+        console.log('class_students table ready.');
+    } catch (err) {
+        console.error('Error creating class_students table:', err.message);
+    }
+})();
+
+// --- DIAGNOSTIC ROUTE: shows real column names from Supabase tables ---
 app.get('/api/diagnose', async (req, res) => {
     try {
         const { rows } = await query(`
