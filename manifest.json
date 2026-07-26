@@ -1,0 +1,25 @@
+{
+  "name": "Elif PU College - Student Dashboard",
+  "short_name": "Elif Student",
+  "description": "Student dashboard for Elif PU College — results, attendance, timetable, exams, and clearance.",
+  "start_url": "/HTML/Student%20Results.html",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#f0f2f5",
+  "theme_color": "#0f510e",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/images/ALIF.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/ALIF.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

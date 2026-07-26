@@ -24,7 +24,7 @@
             --topbar-bg: #ffffff;
             --main-bg: #f4f7fc;
             --card-bg: #ffffff;
-            --text-primary: #1a2853;
+            --text-primary: #0f510e;
             --text-secondary: #5a5c69;
             --border-color: #e3e6f0;
             --shadow-color: rgba(0, 0, 0, 0.05);
@@ -168,7 +168,7 @@
         }
 
         .printable-area .report-header h2 {
-            color: #1a2853;
+            color: #0f510e;
         }
 
         @media print {
@@ -221,6 +221,10 @@
                 <li><a href="classmanagment.html"><i class="fas fa-book-open"></i> <span>Class Management</span></a>
                 </li>
                 <li><a href="fee-managment.html"><i class="fas fa-dollar-sign"></i> <span>Fee Management</span></a></li>
+                <li><a href="results-approval.html"><i class="fas fa-check-double"></i> <span>Results Approval</span></a></li>
+                <li><a href="clearance.html"><i class="fas fa-id-card"></i> <span>Clearance</span></a></li>
+                <li><a href="exam-schedule.html"><i class="fas fa-pen-fancy"></i> <span>Exam Schedule</span></a></li>
+                <li><a href="timetable.html"><i class="fas fa-clock"></i> <span>Timetable</span></a></li>
                 <li><a href="event.html"><i class="fas fa-calendar-alt"></i> <span>Event Calendar</span></a></li>
                 <li><a href="communications.html"><i class="fas fa-comments"></i> <span>Communication</span></a></li>
                 <li><a href="library.html"><i class="fas fa-book-reader"></i> <span>Library Management</span></a></li>
@@ -235,6 +239,9 @@
             <!-- Top Navbar -->
             <nav class="top-navbar">
                 <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
+                <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+                </div>
                 <h4 class="mb-0 ms-3">Report Generation</h4>
             </nav>
             <!-- Content Area -->
@@ -406,6 +413,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // etc.
 
 });
+    </script>
+    <script>
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() {
+    const saved = localStorage.getItem('elif-theme') || 'light';
+    document.body.setAttribute('data-theme', saved);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+})();
     </script>
 
 

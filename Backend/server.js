@@ -39,8 +39,14 @@ app.use('/api/testimonials', require('./routes/testimonials.js'));
 app.use('/api/contact', require('./routes/contact.js'));
 app.use('/api/gallery', require('./routes/gallery.js'));
 app.use('/api/parents', require('./routes/parents.js'));
+app.use('/api/activation', require('./routes/activation.js'));
+app.use('/api/exam-schedules', require('./routes/exam-schedules.js'));
+app.use('/api/timetables', require('./routes/timetables.js'));
+app.use('/api/clearance', require('./routes/clearance.js'));
+app.use('/api/student-dashboard', require('./routes/student-dashboard.js'));
 
 // --- Auto-create class_students junction table if it doesn't exist ---
+// --- Auto-create activation columns if they don't exist ---
 const { query } = require('./database');
 (async () => {
     try {
@@ -53,8 +59,170 @@ const { query } = require('./database');
             )
         `);
         console.log('class_students table ready.');
+        
+        // Add activation columns to users table if they don't exist
+        try {
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS activationtoken VARCHAR(255)`);
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS activationexpires BIGINT`);
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS isactive BOOLEAN DEFAULT true`);
+            console.log('Activation columns ready.');
+        } catch (alterErr) {
+            // Columns might already exist, which is fine
+            if (!alterErr.message.includes('already exists')) {
+                console.error('Error adding activation columns:', alterErr.message);
+            }
+        }
+
+        // Create exam_schedules table if it doesn't exist
+        await query(`
+            CREATE TABLE IF NOT EXISTS exam_schedules (
+                id SERIAL PRIMARY KEY,
+                class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+                subject TEXT NOT NULL,
+                exam_date DATE NOT NULL,
+                start_time TIME NOT NULL,
+                end_time TIME NOT NULL,
+                room TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        console.log('exam_schedules table ready.');
+
+        // Create timetables table if it doesn't exist
+        await query(`
+            CREATE TABLE IF NOT EXISTS timetables (
+                id SERIAL PRIMARY KEY,
+                class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+                day_of_week TEXT NOT NULL,
+                subject TEXT NOT NULL,
+                start_time TIME NOT NULL,
+                end_time TIME NOT NULL,
+                room TEXT,
+                teacher_name TEXT
+            )
+        `);
+        console.log('timetables table ready.');
+
+        // Create clearance_cards table if it doesn't exist
+        await query(`
+            CREATE TABLE IF NOT EXISTS clearance_cards (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+                is_cleared BOOLEAN DEFAULT false,
+                released_by TEXT,
+                released_at TIMESTAMP,
+                semester TEXT,
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        console.log('clearance_cards table ready.');
+
+        // Ensure results table exists with all required columns
+        await query(`
+            CREATE TABLE IF NOT EXISTS results (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+                subject TEXT,
+                score NUMERIC,
+                exam_type TEXT DEFAULT 'score',
+                max_score NUMERIC DEFAULT 100,
+                approval_status TEXT DEFAULT 'approved',
+                submitted_by TEXT,
+                submitted_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        try {
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS subject TEXT`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS score NUMERIC`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS exam_type TEXT DEFAULT 'score'`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS max_score NUMERIC DEFAULT 100`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'approved'`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS submitted_by TEXT`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP DEFAULT NOW()`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS release_at TIMESTAMP DEFAULT NULL`);
+            console.log('results table columns ready.');
+        } catch (alterErr) {
+            if (!alterErr.message.includes('already exists')) {
+                console.error('Error updating results table:', alterErr.message);
+            }
+        }
+
+        // Add department column to students table if it doesn't exist
+        try {
+            await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS department TEXT DEFAULT '--'`);
+            await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS period TEXT DEFAULT '--'`);
+            console.log('students table columns ready.');
+        } catch (e) {
+            if (!e.message.includes('already exists')) {
+                console.error('Error adding students columns:', e.message);
+            }
+        }
+
+        // Create fees table if it doesn't exist
+        await query(`
+            CREATE TABLE IF NOT EXISTS fees (
+                id SERIAL PRIMARY KEY,
+                studentid INTEGER REFERENCES students(id) ON DELETE CASCADE,
+                amount NUMERIC(10,2) NOT NULL,
+                duedate DATE NOT NULL,
+                status TEXT DEFAULT 'Pending',
+                created_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        console.log('fees table ready.');
+
+        // Create results table if it doesn't exist
+        await query(`
+            CREATE TABLE IF NOT EXISTS results (
+                id SERIAL PRIMARY KEY,
+                student_id INTEGER REFERENCES students(id) ON DELETE CASCADE,
+                subject TEXT NOT NULL,
+                score NUMERIC(5,2),
+                approval_status TEXT DEFAULT 'approved',
+                submitted_by TEXT,
+                submitted_at TIMESTAMP DEFAULT NOW()
+            )
+        `);
+        console.log('results table ready.');
+
+        // Add approval columns to results table if they don't exist
+        try {
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS approval_status TEXT DEFAULT 'approved'`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS submitted_by TEXT`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS submitted_at TIMESTAMP DEFAULT NOW()`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS exam_type TEXT DEFAULT 'score'`);
+            await query(`ALTER TABLE results ADD COLUMN IF NOT EXISTS max_score NUMERIC(5,2) DEFAULT 100`);
+            // Drop foreign key constraint on exam_id if it exists
+            try {
+                const { rows: fkRows } = await query(`
+                    SELECT conname FROM pg_constraint 
+                    WHERE conrelid = 'results'::regclass 
+                    AND contype = 'f' 
+                    AND confrelid = 'exam_schedules'::regclass
+                `);
+                for (const fk of fkRows) {
+                    await query(`ALTER TABLE results DROP CONSTRAINT ${fk.conname}`);
+                    console.log(`Dropped foreign key: ${fk.conname}`);
+                }
+            } catch (e) { /* constraint might not exist */ }
+            // Make exam_id nullable if it has NOT NULL constraint
+            try {
+                await query(`ALTER TABLE results ALTER COLUMN exam_id DROP NOT NULL`);
+            } catch (e) { /* exam_id might already be nullable or not exist */ }
+            // Set default for exam_id if it exists
+            try {
+                await query(`ALTER TABLE results ALTER COLUMN exam_id SET DEFAULT NULL`);
+            } catch (e) { /* column might not exist */ }
+            // Update existing results to approved
+            await query(`UPDATE results SET approval_status = 'approved' WHERE approval_status IS NULL`);
+            console.log('Results approval columns ready.');
+        } catch (alterErr) {
+            if (!alterErr.message.includes('already exists')) {
+                console.error('Error adding results columns:', alterErr.message);
+            }
+        }
     } catch (err) {
-        console.error('Error creating class_students table:', err.message);
+        console.error('Error creating tables:', err.message);
     }
 })();
 
@@ -96,7 +264,26 @@ app.get('/api/tables', async (req, res) => {
 
 // --- 3. Static File Serving ---
 
-// --- 4. Main Homepage Route ---
+// --- 4. Auto-Release Scheduler: checks every 60s for held results whose release time has passed ---
+setInterval(async () => {
+    try {
+        const { rows } = await query(`
+            UPDATE results
+            SET approval_status = 'approved'
+            WHERE approval_status = 'on_hold'
+              AND release_at IS NOT NULL
+              AND release_at <= NOW()
+            RETURNING id
+        `);
+        if (rows.length > 0) {
+            console.log(`[Auto-Release] ${rows.length} result(s) auto-released.`);
+        }
+    } catch (e) {
+        // ignore if column doesn't exist yet
+    }
+}, 60000);
+
+// --- 5. Main Homepage Route ---
 app.get('/', (req, res) => {
     res.redirect('/HTML/index.html');
 });

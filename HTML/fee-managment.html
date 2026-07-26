@@ -32,6 +32,10 @@
                 </li>
                 <li><a href="fee-managment.html" class="active"><i class="fas fa-dollar-sign"></i> <span>Fee
                             Management</span></a></li>
+                <li><a href="results-approval.html"><i class="fas fa-check-double"></i> <span>Results Approval</span></a></li>
+                <li><a href="clearance.html"><i class="fas fa-id-card"></i> <span>Clearance</span></a></li>
+                <li><a href="exam-schedule.html"><i class="fas fa-pen-fancy"></i> <span>Exam Schedule</span></a></li>
+                <li><a href="timetable.html"><i class="fas fa-clock"></i> <span>Timetable</span></a></li>
                 <!-- ... other links ... -->
                 <li><a href="index.html"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
             </ul>
@@ -42,6 +46,9 @@
             <nav class="top-navbar">
                 <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
                 <h4 class="mb-0 ms-3">Fee Management</h4>
+                <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+                </div>
                 <div class="ms-auto d-flex align-items-center">
                     <button class="btn btn-primary btn-sm" id="btn-add-fee"><i class="fas fa-plus me-1"></i> Add Fee
                         Record</button>
@@ -194,9 +201,9 @@
             }
 
             function updateSummaryCards() {
-                const totalRevenue = fees.filter(f => f.status === 'Paid').reduce((sum, f) => sum + f.amount, 0);
-                const totalPending = fees.filter(f => f.status === 'Pending').reduce((sum, f) => sum + f.amount, 0);
-                const totalOverdue = fees.filter(f => f.status === 'Overdue').reduce((sum, f) => sum + f.amount, 0);
+                const totalRevenue = fees.filter(f => f.status === 'Paid').reduce((sum, f) => sum + Number(f.amount), 0);
+                const totalPending = fees.filter(f => f.status === 'Pending').reduce((sum, f) => sum + Number(f.amount), 0);
+                const totalOverdue = fees.filter(f => f.status === 'Overdue').reduce((sum, f) => sum + Number(f.amount), 0);
 
                 document.getElementById('total-revenue').textContent = `$${totalRevenue.toLocaleString()}`;
                 document.getElementById('total-pending').textContent = `$${totalPending.toLocaleString()}`;
@@ -208,18 +215,22 @@
                 const filteredFees = filter === 'all' ? fees : fees.filter(f => f.status === filter);
                 const statusColors = { 'Paid': 'bg-success', 'Pending': 'bg-warning text-dark', 'Overdue': 'bg-danger' };
 
-                tbody.innerHTML = filteredFees.map(f => `
+                tbody.innerHTML = filteredFees.map(f => {
+                    const dueDate = f.duedate ? new Date(f.duedate).toLocaleDateString() : 'N/A';
+                    return `
                 <tr>
                     <td>INV-${String(f.id).padStart(5, '0')}</td>
                     <td>${f.studentName}</td>
-                    <td>$${f.amount.toFixed(2)}</td>
+                    <td>$${Number(f.amount).toFixed(2)}</td>
                     <td><span class="badge ${statusColors[f.status]}">${f.status}</span></td>
-                    <td>${f.duedate}</td>
+                    <td>${dueDate}</td>
                     <td class="action-buttons">
+                        ${f.status === 'Paid' ? `<button class="btn btn-sm btn-success btn-clearance" data-studentid="${f.studentid || ''}" data-studentname="${f.studentName}" title="Release Clearance"><i class="fas fa-id-card"></i></button>` : ''}
                         <button class="btn btn-sm btn-edit" data-id="${f.id}"><i class="fas fa-edit"></i></button>
                         <button class="btn btn-sm btn-delete" data-id="${f.id}"><i class="fas fa-trash"></i></button>
                     </td>
-                </tr>`).join('');
+                </tr>`;
+                }).join('');
             }
 
             function populateStudentSelect() {
@@ -241,13 +252,31 @@
                 feeModal.show();
             });
 
-            document.getElementById('fee-table-body').addEventListener('click', e => {
+            document.getElementById('fee-table-body').addEventListener('click', async e => {
                 const button = e.target.closest('button');
                 if (!button) return;
                 const id = parseInt(button.dataset.id);
                 const fee = fees.find(f => f.id === id);
 
-                if (button.classList.contains('btn-edit')) {
+                if (button.classList.contains('btn-clearance')) {
+                    const studentId = parseInt(button.dataset.studentid);
+                    const studentName = button.dataset.studentname;
+                    if (!studentId) return alert('Student ID not found for this fee record.');
+                    if (confirm(`Release clearance card for ${studentName}? This will allow them to enter exams.`)) {
+                        try {
+                            const res = await fetch('/api/clearance', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ studentId, releasedBy: 'Admin', semester: 'Current Semester' })
+                            });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.error || 'Failed to release clearance');
+                            alert(`Clearance card released for ${studentName}!`);
+                        } catch (err) {
+                            alert(`Error: ${err.message}`);
+                        }
+                    }
+                } else if (button.classList.contains('btn-edit')) {
                     document.getElementById('feeModalTitle').textContent = 'Edit Fee Record';
                     feeForm.dataset.mode = 'edit';
                     feeForm.dataset.id = id;
@@ -255,9 +284,9 @@
                     // Find the original fee record to get the studentId
                     const originalFee = fees.find(f => f.id === id);
                     feeForm.elements.studentId.value = originalFee.studentid || '';
-                    feeForm.elements.amount.value = fee.amount;
-                    feeForm.elements.dueDate.value = fee.duedate;
-                    feeForm.elements.status.value = fee.status;
+                    feeForm.elements.amount.value = Number(originalFee.amount);
+                    feeForm.elements.dueDate.value = originalFee.duedate ? originalFee.duedate.split('T')[0] : '';
+                    feeForm.elements.status.value = originalFee.status;
                     feeModal.show();
                 } else if (button.classList.contains('btn-delete')) {
                     if (confirm(`Are you sure you want to delete invoice INV-${String(id).padStart(5, '0')}?`)) {
@@ -310,6 +339,23 @@
 
 
     <script>
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() {
+    const saved = localStorage.getItem('elif-theme') || 'light';
+    document.body.setAttribute('data-theme', saved);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+})();
+    </script>
         // JS/admin.js
 
         document.addEventListener('DOMContentLoaded', () => {

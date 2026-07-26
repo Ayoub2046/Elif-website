@@ -3,17 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard</title>
+    <title>Admin Dashboard | Elif PU College</title>
     <link rel="icon" type="image/png" href="/images/ALIF.png">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"/>
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        .stat-card { transition: transform .2s, box-shadow .2s; }
+        .stat-card:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.08); }
+        .chart-card { background: var(--bg-card,#fff); border-radius: 12px; border: 1px solid var(--border-color); height: 100%; }
+        .chart-card .card-header { background: transparent; border-bottom: 1px solid var(--border-color); font-weight: 700; font-size: .85rem; }
+        .chart-container { position: relative; height: 200px; padding: .5rem; }
+        .quick-action { background: var(--bg-card,#fff); border-radius: 12px; border: 1px solid var(--border-color); padding: 1rem; text-align: center; transition: all .2s; cursor: pointer; text-decoration: none; display: block; }
+        .quick-action:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.08); border-color: var(--primary); }
+        .quick-action i { font-size: 1.5rem; color: var(--primary); margin-bottom: .3rem; }
+        .quick-action span { display: block; font-size: .8rem; font-weight: 600; color: var(--text-primary); }
+        .activity-item { padding: .6rem 0; border-bottom: 1px solid var(--border-color,#f0f0f0); font-size: .82rem; }
+        .activity-item:last-child { border-bottom: none; }
+        .activity-item .act-icon { width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: .7rem; margin-right: .5rem; }
+        .activity-item .act-time { font-size: .7rem; color: var(--text-secondary); margin-left: auto; white-space: nowrap; }
+        .alert-chip { display: inline-flex; align-items: center; gap: .4rem; background: #fff3cd; color: #856404; border-radius: 20px; padding: .25rem .8rem; font-size: .75rem; font-weight: 600; margin-right: .4rem; margin-bottom: .4rem; }
+        body[data-theme="dark"] .alert-chip { background: rgba(255,193,7,0.12); color: #ffc107; }
+        body[data-theme="dark"] .quick-action { background: #1a1e1a; }
+        .admin-avatar { width: 36px; height: 36px; border-radius: 50%; object-fit: cover; }
+    </style>
 </head>
 <body>
 <div class="dashboard-wrapper">
-    <!-- Sidebar -->
     <nav class="sidebar">
-        <div class="sidebar-header"><h3><img src="/images/ALIF.png" style="width: 60px; height: 60px; border-radius: 50px;" alt=""><span style="font-size: 20px;">Elif Pu Collage</span></h3></div>
+        <div class="sidebar-header"><h3><img src="/images/ALIF.png" style="width:60px;height:60px;border-radius:50px;" alt=""><span style="font-size:20px;">Elif Pu Collage</span></h3></div>
         <ul class="sidebar-nav">
             <li><a href="admin.html" class="active"><i class="fas fa-tachometer-alt"></i> <span>Dashboard</span></a></li>
             <li><a href="user.html"><i class="fas fa-users-cog"></i> <span>User Management</span></a></li>
@@ -21,9 +40,12 @@
             <li><a href="attendance.html"><i class="fas fa-user-check"></i> <span>Attendance</span></a></li>
             <li><a href="teacher.html"><i class="fas fa-chalkboard-teacher"></i> <span>Teacher Management</span></a></li>
             <li><a href="classmanagment.html"><i class="fas fa-book-open"></i> <span>Class Management</span></a></li>
-            
-            <li><a href="gallery-admin.html" class="active"><i class="fas fa-images"></i> <span>Gallery</span></a></li>
+            <li><a href="gallery-admin.html"><i class="fas fa-images"></i> <span>Gallery</span></a></li>
             <li><a href="fee-managment.html"><i class="fas fa-dollar-sign"></i> <span>Fee Management</span></a></li>
+            <li><a href="results-approval.html"><i class="fas fa-check-double"></i> <span>Results Approval</span></a></li>
+            <li><a href="clearance.html"><i class="fas fa-id-card"></i> <span>Clearance</span></a></li>
+            <li><a href="exam-schedule.html"><i class="fas fa-pen-fancy"></i> <span>Exam Schedule</span></a></li>
+            <li><a href="timetable.html"><i class="fas fa-clock"></i> <span>Timetable</span></a></li>
             <li><a href="admissions-admin.html"><i class="fas fa-file-signature"></i> <span>Manage Admissions</span></a></li>
             <li><a href="event.html"><i class="fas fa-calendar-alt"></i> <span>Event Calendar</span></a></li>
             <li><a href="communications.html"><i class="fas fa-comments"></i> <span>Communication</span></a></li>
@@ -36,44 +58,82 @@
         </ul>
     </nav>
 
-    <!-- Main Content -->
     <div class="main-content">
-        <!-- Top Navbar -->
         <nav class="top-navbar">
             <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
             <h4 class="mb-0 ms-3">Dashboard</h4>
             <div class="ms-auto d-flex align-items-center">
+                <button class="btn btn-sm btn-outline-secondary me-3" id="refresh-btn" title="Refresh"><i class="fas fa-sync-alt"></i></button>
+                <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+                </div>
                 <div class="input-group me-3 d-none d-md-flex">
-                    <!-- The ID is added here -->
-                    <input type="text" class="form-control" placeholder="Search students by name or ID..." id="student-search-input">
+                    <input type="text" class="form-control" placeholder="Search students..." id="student-search-input">
                     <button class="btn btn-primary" type="button"><i class="fas fa-search"></i></button>
                 </div>
                 <div class="dropdown">
                     <a href="#" class="d-flex align-items-center text-dark text-decoration-none dropdown-toggle" data-bs-toggle="dropdown">
-                        <img id="dashboardProfileImg" src="/images/ALIF.png" alt="Admin" class="rounded-circle me-2" style="width: 40px; height: 40px;">
-                        <strong id="dashboardProfileName">Admin User</strong>
+                        <img id="dashboardProfileImg" src="/images/ALIF.png" alt="Admin" class="rounded-circle me-2" style="width:40px;height:40px;">
+                        <strong id="dashboardProfileName">Admin</strong>
                     </a>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <!-- <li><a class="dropdown-item" href="/HTML/Admin Settings.html" id="logout-link-dropdown">Admin setting</a></li> -->
-                        <!-- <li><a class="dropdown-item" href="/HTML/Admin Profile.html" id="logout-link-dropdown">Admin profile</a></li> -->
                         <li><a class="dropdown-item" href="/HTML/index.html" id="logout-link-dropdown">Sign out</a></li>
                     </ul>
                 </div>
             </div>
         </nav>
-        
-        <!-- Content Area -->
+
         <div class="content-area p-4">
             <!-- Stat Cards -->
-            <div class="row g-4">
-                <div class="col-xl-3 col-md-6"><div class="stat-card border-primary"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Total Students</div><div class="stat-number" id="total-students-display">0</div></div><div class="stat-icon"><i class="fas fa-user-graduate"></i></div></div></div></div>
-                <div class="col-xl-3 col-md-6"><div class="stat-card border-success"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Total Teachers</div><div class="stat-number" id="total-teachers-display">0</div></div><div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div></div></div></div>
-                <div class="col-xl-3 col-md-6"><div class="stat-card border-warning"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Upcoming Events</div><div class="stat-number" id="upcoming-events-display">0</div></div><div class="stat-icon"><i class="fas fa-calendar-alt"></i></div></div></div></div>
-                <div class="col-xl-3 col-md-6"><div class="stat-card border-danger"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Overdue Fees</div><div class="stat-number" id="overdue-fees-display">$0</div></div><div class="stat-icon"><i class="fas fa-file-invoice-dollar"></i></div></div></div></div>
+            <div class="row g-3 mb-4" id="stat-cards">
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card border-primary"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Total Students</div><div class="stat-number" id="total-students-display">0</div></div><div class="stat-icon"><i class="fas fa-user-graduate"></i></div></div></div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card border-success"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Total Teachers</div><div class="stat-number" id="total-teachers-display">0</div></div><div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div></div></div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card border-warning"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Pending Approvals</div><div class="stat-number" id="pending-approvals-display">0</div></div><div class="stat-icon"><i class="fas fa-check-double"></i></div></div></div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="stat-card border-danger"><div class="d-flex justify-content-between"><div class="text-content"><div class="stat-text">Overdue Fees</div><div class="stat-number" id="overdue-fees-display">$0</div></div><div class="stat-icon"><i class="fas fa-file-invoice-dollar"></i></div></div></div>
+                </div>
             </div>
 
-            <!-- Recently Enrolled Students Table -->
-            <div class="card main-table-card mt-4">
+            <!-- Charts Row -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="chart-card"><div class="card-header"><i class="fas fa-user-check me-1"></i>Attendance Overview</div><div class="chart-container"><canvas id="attendanceChart"></canvas></div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-card"><div class="card-header"><i class="fas fa-layer-group me-1"></i>Grade Distribution</div><div class="chart-container"><canvas id="gradeChart"></canvas></div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-card"><div class="card-header"><i class="fas fa-dollar-sign me-1"></i>Fee Collection</div><div class="chart-container"><canvas id="feeChart"></canvas></div></div>
+                </div>
+            </div>
+
+            <!-- Quick Actions + Activity + Alerts -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-3">
+                    <h6 class="fw-bold mb-2" style="font-size:.8rem;color:var(--text-secondary);"><i class="fas fa-bolt me-1"></i>Quick Actions</h6>
+                    <a href="student.html" class="quick-action mb-2"><i class="fas fa-user-plus"></i><span>Add Student</span></a>
+                    <a href="teacher.html" class="quick-action mb-2"><i class="fas fa-chalkboard-teacher"></i><span>Manage Teachers</span></a>
+                    <a href="results-approval.html" class="quick-action mb-2"><i class="fas fa-check-double"></i><span>Approve Results</span></a>
+                    <a href="fee-managment.html" class="quick-action mb-2"><i class="fas fa-dollar-sign"></i><span>Fee Management</span></a>
+                    <a href="event.html" class="quick-action mb-2"><i class="fas fa-calendar-plus"></i><span>Create Event</span></a>
+                </div>
+                <div class="col-md-5">
+                    <div class="chart-card"><div class="card-header"><i class="fas fa-history me-1"></i>Recent Activity</div><div class="card-body p-2" id="activity-feed"><div class="text-center text-muted py-3"><small>Loading...</small></div></div></div>
+                </div>
+                <div class="col-md-4">
+                    <div class="chart-card mb-3"><div class="card-header"><i class="fas fa-exclamation-triangle me-1"></i>Alerts</div><div class="card-body p-2" id="alerts-panel"><div class="text-center text-muted py-3"><small>Loading...</small></div></div></div>
+                    <div class="chart-card"><div class="card-header"><i class="fas fa-percent me-1"></i>Overall Attendance</div><div class="card-body text-center py-3"><div class="display-4 fw-bold" id="overall-att-pct" style="color:var(--primary);">0%</div><small class="text-muted">across all students</small></div></div>
+                </div>
+            </div>
+
+            <!-- Student Table -->
+            <div class="card main-table-card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h6>All Students</h6>
                     <a href="student.html" class="btn btn-primary btn-sm"><i class="fas fa-plus me-1"></i> Manage Students</a>
@@ -81,7 +141,7 @@
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-hover">
-                            <thead><tr><th>Student ID</th><th>Name</th><th>Grade</th><th>Enrollment Date</th><th>Birth Date</th><th>Attendance</th><th>Actions</th></tr></thead>
+                            <thead><tr><th>ID</th><th>Name</th><th>Grade</th><th>Parent</th><th>Enrolled</th><th>Birth Date</th><th>Attendance</th><th>Actions</th></tr></thead>
                             <tbody id="student-table-body"></tbody>
                         </table>
                     </div>
@@ -94,83 +154,152 @@
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
-    // --- COMMON SCRIPT FOR ALL ADMIN PAGES ---
     const sidebar = document.querySelector('.sidebar');
     const sidebarToggler = document.getElementById('sidebar-toggler');
-    if (sidebarToggler) { sidebarToggler.addEventListener('click', () => sidebar.classList.toggle('toggled')); }
-    if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') { window.location.href = 'admin-login.html'; }
+    if (sidebarToggler) sidebarToggler.addEventListener('click', () => sidebar.classList.toggle('toggled'));
+    if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') { window.location.href = 'admin-login.html'; return; }
     const logout = () => { sessionStorage.clear(); window.location.href = 'admin-login.html'; };
     document.querySelectorAll('#logout-link, #logout-link-dropdown').forEach(l => l.addEventListener('click', e => { e.preventDefault(); logout(); }));
 
-    // --- PAGE-SPECIFIC SCRIPT FOR DASHBOARD ---
-    const API_URL = '/api/dashboard/summary';
     const searchInput = document.getElementById('student-search-input');
-    let allStudents = []; // Stores the full list of students
+    let allStudents = [];
+    let charts = {};
 
-    // Function to render the student table
-    function renderStudents(studentsToRender) {
+    function fmtDate(d) { if (!d) return '-'; try { return new Date(d).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); } catch { return d; } }
+
+    function renderTable(studentsToRender) {
         const tbody = document.getElementById('student-table-body');
         if (!studentsToRender || studentsToRender.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="7" class="text-center">No students found matching your search.</td></tr>`;
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center">No students found.</td></tr>';
         } else {
             tbody.innerHTML = studentsToRender.map(s => `
                 <tr>
                     <td>ELP${250000 + s.id}</td>
                     <td>${s.name}</td>
-                    <td>${s.grade}</td>
-                    <td>${s.enrollmentdate ? new Date(s.enrollmentdate).toLocaleDateString() : '-'}</td>
-                    <td>${s.birthdate ? new Date(s.birthdate).toLocaleDateString() : '-'}</td>
-                    <td>${s.attendance != null ? Number(s.attendance).toFixed(0) + '%' : '-'}</td>
+                    <td>${s.grade || '-'}</td>
+                    <td>${s.parent_name || '<span class="text-muted">—</span>'}</td>
+                    <td>${fmtDate(s.enrollmentdate)}</td>
+                    <td>${fmtDate(s.birthdate)}</td>
+                    <td>${s.attendance != null ? '<span class="badge ' + (s.attendance < 50 ? 'bg-danger' : s.attendance < 75 ? 'bg-warning text-dark' : 'bg-success') + '">' + Number(s.attendance).toFixed(0) + '%</span>' : '-'}</td>
                     <td class="action-buttons">
-                        <a href="student.html" class="btn btn-sm btn-outline-primary" title="Manage All Students"><i class="fas fa-external-link-alt"></i></a>
+                        <a href="student.html" class="btn btn-sm btn-outline-primary" title="Manage"><i class="fas fa-external-link-alt"></i></a>
                     </td>
                 </tr>`).join('');
         }
     }
-    
-    // Fetch initial data from the server
-    fetch(API_URL)
-        .then(res => {
-            if (!res.ok) throw new Error('Server returned an error');
-            return res.json();
-        })
-        .then(data => {
-            // Update summary cards
-            document.getElementById('total-students-display').textContent = data.totalStudents;
-            document.getElementById('total-teachers-display').textContent = data.totalTeachers;
-            document.getElementById('upcoming-events-display').textContent = data.upcomingEvents;
-            document.getElementById('overdue-fees-display').textContent = `$${(data.overdueFees || 0).toLocaleString()}`;
 
-            // Store the full student list and render it for the first time
-            allStudents = data.recentStudents || [];
-            renderStudents(allStudents);
-        }).catch(err => {
-            console.error("Dashboard Load Error:", err);
-            document.getElementById('student-table-body').innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error loading data.</td></tr>`;
-        });
-
-    // Event listener for the real-time search bar
-    searchInput.addEventListener('input', () => {
-        const searchTerm = searchInput.value.toLowerCase().trim();
-        
-        if (searchTerm === '') {
-            renderStudents(allStudents); // If search is empty, show all students
-            return;
+    function renderCharts(data) {
+        // Attendance doughnut
+        const attCanvas = document.getElementById('attendanceChart');
+        if (attCanvas) {
+            if (charts.attendance) charts.attendance.destroy();
+            const att = data.overallAttendance || { total: 0, present: 0 };
+            const absent = att.total - att.present;
+            charts.attendance = new Chart(attCanvas, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Present', 'Absent'],
+                    datasets: [{ data: [att.present, Math.max(0, absent)], backgroundColor: ['#28a745', '#e74c3c'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } }, cutout: '65%' }
+            });
         }
 
-        // Filter the master list of students based on the search term
-        const filteredStudents = allStudents.filter(student => {
-            const studentIdString = `elp${250000 + student.id}`;
-            const studentName = student.name.toLowerCase();
-            
-            // Return true if either the name or ID includes the search term
-            return studentName.includes(searchTerm) || studentIdString.includes(searchTerm);
-        });
-        
-        // Re-render the table with only the filtered results
-        renderStudents(filteredStudents);
+        // Grade distribution bar
+        const gradeCanvas = document.getElementById('gradeChart');
+        if (gradeCanvas) {
+            if (charts.grade) charts.grade.destroy();
+            const grades = data.gradeDistribution || [];
+            charts.grade = new Chart(gradeCanvas, {
+                type: 'bar',
+                data: { labels: grades.map(g => g.grade), datasets: [{ label: 'Students', data: grades.map(g => parseInt(g.cnt)), backgroundColor: 'rgba(29,217,29,0.6)', borderColor: '#1dd91d', borderWidth: 1 }] },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
+            });
+        }
+
+        // Fee pie
+        const feeCanvas = document.getElementById('feeChart');
+        if (feeCanvas) {
+            if (charts.fee) charts.fee.destroy();
+            const fs = data.feeSummary || {};
+            charts.fee = new Chart(feeCanvas, {
+                type: 'pie',
+                data: {
+                    labels: ['Paid', 'Pending', 'Overdue'],
+                    datasets: [{ data: [fs.paid || 0, fs.pending || 0, fs.overdue || 0], backgroundColor: ['#28a745', '#f39c12', '#e74c3c'], borderWidth: 0 }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 10, font: { size: 10 } } } } }
+            });
+        }
+    }
+
+    function renderActivity(data) {
+        const feed = document.getElementById('activity-feed');
+        if (!feed) return;
+        const items = [];
+        (data.recentStudents || []).forEach(s => items.push({ icon: 'fas fa-user-graduate', bg: 'rgba(29,217,29,0.15)', color: '#1dd91d', text: `<strong>${s.name}</strong> enrolled (Grade ${s.grade})`, time: fmtDate(s.enrollmentdate) }));
+        (data.recentResults || []).forEach(r => items.push({ icon: 'fas fa-poll', bg: 'rgba(23,162,184,0.15)', color: '#17a2b8', text: `<strong>${r.student_name}</strong> — ${r.subject}: ${r.score}`, time: fmtDate(r.submitted_at) }));
+        (data.recentFees || []).forEach(f => items.push({ icon: 'fas fa-dollar-sign', bg: 'rgba(243,156,18,0.15)', color: '#f39c12', text: `<strong>${f.student_name}</strong> — $${parseFloat(f.amount).toFixed(2)} (${f.status})`, time: fmtDate(f.duedate) }));
+        if (items.length === 0) { feed.innerHTML = '<div class="text-center text-muted py-3"><small>No recent activity.</small></div>'; return; }
+        feed.innerHTML = items.slice(0, 8).map(i => `<div class="activity-item d-flex align-items-center"><span class="act-icon" style="background:${i.bg};color:${i.color};"><i class="${i.icon}"></i></span><div class="flex-grow-1"><div>${i.text}</div></div><span class="act-time">${i.time}</span></div>`).join('');
+    }
+
+    function renderAlerts(data) {
+        const panel = document.getElementById('alerts-panel');
+        if (!panel) return;
+        const chips = [];
+        if (data.pendingApprovals > 0) chips.push(`<span class="alert-chip"><i class="fas fa-check-double"></i>${data.pendingApprovals} result(s) pending approval</span>`);
+        if (data.feeSummary && data.feeSummary.overdue > 0) chips.push(`<span class="alert-chip"><i class="fas fa-exclamation-circle"></i>${data.feeSummary.overdue} overdue fee(s) — $${(data.feeSummary.totalOverdue || 0).toLocaleString()}</span>`);
+        (data.lowAttendanceStudents || []).forEach(s => chips.push(`<span class="alert-chip"><i class="fas fa-user-graduate"></i>${s.name} (${s.grade}) — ${Number(s.attendance).toFixed(0)}% attendance</span>`));
+        panel.innerHTML = chips.length > 0 ? chips.join('') : '<div class="text-center text-muted py-2"><small><i class="fas fa-check-circle me-1 text-success"></i>All clear — no alerts.</small></div>';
+    }
+
+    async function loadDashboard() {
+        try {
+            const res = await fetch('/api/dashboard/summary');
+            if (!res.ok) throw new Error('Server error');
+            const data = await res.json();
+
+            document.getElementById('total-students-display').textContent = data.totalStudents;
+            document.getElementById('total-teachers-display').textContent = data.totalTeachers;
+            document.getElementById('pending-approvals-display').textContent = data.pendingApprovals;
+            document.getElementById('overdue-fees-display').textContent = '$' + ((data.feeSummary && data.feeSummary.totalOverdue) || 0).toLocaleString();
+            document.getElementById('overall-att-pct').textContent = (data.overallAttendance && data.overallAttendance.percentage) + '%';
+
+            allStudents = data.recentStudents || [];
+            renderTable(allStudents);
+
+            renderCharts(data);
+            renderAlerts(data);
+
+            // Load activity separately
+            const actRes = await fetch('/api/dashboard/activities');
+            if (actRes.ok) { const actData = await actRes.json(); renderActivity(actData); }
+
+        } catch (err) {
+            console.error('Dashboard load error:', err);
+            document.getElementById('student-table-body').innerHTML = '<tr><td colspan="8" class="text-center text-danger">Error loading data.</td></tr>';
+        }
+    }
+
+    searchInput.addEventListener('input', () => {
+        const term = searchInput.value.toLowerCase().trim();
+        if (!term) { renderTable(allStudents); return; }
+        renderTable(allStudents.filter(s => s.name.toLowerCase().includes(term) || `elp${250000 + s.id}`.includes(term)));
     });
+
+    document.getElementById('refresh-btn').addEventListener('click', loadDashboard);
+
+    loadDashboard();
 });
+
+function toggleTheme() {
+    const body = document.body, next = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next); localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() { const saved = localStorage.getItem('elif-theme') || 'light'; document.body.setAttribute('data-theme', saved); const icon = document.getElementById('themeIcon'); if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon'; })();
 </script>
 </body>
 </html>

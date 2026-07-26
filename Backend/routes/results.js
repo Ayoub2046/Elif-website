@@ -4,7 +4,22 @@ const express = require('express');
 const { query } = require('../database.js');
 const router = express.Router();
 
-// GET all results for a specific student
+// Exam type definitions with max scores
+const EXAM_TYPES = {
+    quiz1: { label: 'Quiz 1', maxScore: 5, category: 'Quiz', order: 1 },
+    quiz2: { label: 'Quiz 2', maxScore: 5, category: 'Quiz', order: 2 },
+    sem1: { label: 'Semester 1', maxScore: 5, category: 'Semester', order: 3 },
+    sem2: { label: 'Semester 2', maxScore: 5, category: 'Semester', order: 4 },
+    midterm: { label: 'Midterm', maxScore: 40, category: 'Midterm', order: 5 },
+    final: { label: 'Final', maxScore: 40, category: 'Final', order: 6 }
+};
+
+// GET exam type definitions
+router.get('/exam-types/definitions', (req, res) => {
+    res.json(EXAM_TYPES);
+});
+
+// GET approved results for a specific student (for student/parent view)
 router.get('/:studentId', async (req, res) => {
     const studentId = parseInt(req.params.studentId);
     if (isNaN(studentId)) return res.status(400).json({ error: 'Invalid student ID' });
@@ -12,24 +27,42 @@ router.get('/:studentId', async (req, res) => {
         const { rows: studentRows } = await query(`SELECT * FROM students WHERE id = $1`, [studentId]);
         const student = studentRows[0];
         if (!student) {
-            console.log(`Results lookup failed: student id=${studentId} not found`);
             return res.status(404).json({ error: 'Student not found' });
         }
 
         let subjects = [];
         try {
-            const subjectsRes = await query(`SELECT subject, score FROM results WHERE student_id = $1`, [studentId]);
+            const subjectsRes = await query(
+                `SELECT subject, score, exam_type FROM results WHERE student_id = $1 AND approval_status = 'approved'`,
+                [studentId]
+            );
             subjects = subjectsRes.rows;
-        } catch (e) {
-            // results table may not exist yet
+        } catch (e) { }
+
+        // Group results by subject, then by exam type
+        const groupedResults = {};
+        subjects.forEach(item => {
+            if (!groupedResults[item.subject]) {
+                groupedResults[item.subject] = {};
+            }
+            groupedResults[item.subject][item.exam_type || 'score'] = parseFloat(item.score);
+        });
+
+        // Calculate totals for each subject
+        const calculatedResults = {};
+        for (const [subject, scores] of Object.entries(groupedResults)) {
+            const total = Object.values(scores).reduce((sum, s) => sum + s, 0);
+            calculatedResults[subject] = {
+                scores,
+                total,
+                maxTotal: 100
+            };
         }
 
         const fullResult = {
             ...student,
-            subjects: subjects.reduce((obj, item) => {
-                obj[item.subject] = item.score;
-                return obj;
-            }, {})
+            subjects: calculatedResults,
+            examTypes: EXAM_TYPES
         };
         res.json(fullResult);
     } catch (err) {
@@ -37,28 +70,209 @@ router.get('/:studentId', async (req, res) => {
     }
 });
 
-// POST (save) all results for a student
-router.post('/:studentId', async (req, res) => {
-    const { studentId } = req.params;
-    const { gpa, remarks, subjects } = req.body;
+// GET all results (admin view - all statuses)
+router.get('/', async (req, res) => {
     try {
-        // 1. Update student's gpa and remarks
-        await query(`UPDATE students SET gpa = $1, remarks = $2 WHERE id = $3`, [gpa, remarks, studentId]);
+        const { rows } = await query(`
+            SELECT r.id, r.student_id, r.subject, r.score, r.exam_type, r.approval_status, r.submitted_by, r.submitted_at,
+                   s.name AS "studentName", s.grade
+            FROM results r
+            JOIN students s ON r.student_id = s.id
+            ORDER BY r.submitted_at DESC, r.student_id
+        `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-        // 2. Delete all old results for this student
-        await query(`DELETE FROM results WHERE student_id = $1`, [studentId]);
+// GET pending results (admin view)
+router.get('/pending/all', async (req, res) => {
+    try {
+        const { rows } = await query(`
+            SELECT r.id, r.student_id, r.subject, r.score, r.exam_type, r.approval_status, r.submitted_by, r.submitted_at,
+                   s.name AS "studentName", s.grade
+            FROM results r
+            JOIN students s ON r.student_id = s.id
+            WHERE r.approval_status = 'pending'
+            ORDER BY r.submitted_at DESC, r.student_id
+        `);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-        // 3. Insert new subject scores
-        for (const subject in subjects) {
+// GET results by teacher (for teacher view)
+router.get('/teacher/:teacherId', async (req, res) => {
+    const teacherId = parseInt(req.params.teacherId);
+    if (isNaN(teacherId)) return res.status(400).json({ error: 'Invalid teacher ID' });
+    try {
+        const { rows } = await query(`
+            SELECT r.id, r.student_id, r.subject, r.score, r.exam_type, r.approval_status, r.submitted_at,
+                   s.name AS "studentName", s.grade
+            FROM results r
+            JOIN students s ON r.student_id = s.id
+            WHERE r.submitted_by = $1
+            ORDER BY r.submitted_at DESC, r.student_id
+        `, [teacherId]);
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// POST (submit) results from teacher (status = pending)
+router.post('/', async (req, res) => {
+    const { studentId, subject, examScores, teacherId, teacherName } = req.body;
+    if (!studentId || !subject || !examScores || !Array.isArray(examScores)) {
+        return res.status(400).json({ error: 'studentId, subject, and examScores array are required.' });
+    }
+    try {
+        // Delete any existing pending results for this student/subject from this teacher
+        await query(
+            `DELETE FROM results WHERE student_id = $1 AND subject = $2 AND submitted_by = $3 AND approval_status = 'pending'`,
+            [studentId, subject, teacherName || `Teacher-${teacherId}`]
+        );
+
+        // Insert new results with pending status
+        for (const item of examScores) {
+            const examType = item.examType;
+            const maxScore = EXAM_TYPES[examType]?.maxScore || 100;
+            const score = Math.min(parseFloat(item.score) || 0, maxScore);
+
             await query(
-                `INSERT INTO results (student_id, subject, score) VALUES ($1, $2, $3)`,
-                [studentId, subject, subjects[subject]]
+                `INSERT INTO results (student_id, subject, score, exam_type, max_score, approval_status, submitted_by, submitted_at)
+                 VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW())`,
+                [studentId, subject, score, examType, maxScore, teacherName || `Teacher-${teacherId}`]
             );
         }
-        res.status(200).json({ message: 'Results saved successfully' });
+        res.status(201).json({ message: 'Results submitted for approval.' });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
 });
+
+// PUT approve/reject results (admin)
+router.put('/approve', async (req, res) => {
+    const { ids, status } = req.body;
+    if (!ids || !Array.isArray(ids) || !status) {
+        return res.status(400).json({ error: 'ids array and status are required.' });
+    }
+    if (!['approved', 'rejected'].includes(status)) {
+        return res.status(400).json({ error: 'Status must be approved or rejected.' });
+    }
+    try {
+        for (const id of ids) {
+            await query(
+                `UPDATE results SET approval_status = $1 WHERE id = $2`,
+                [status, id]
+            );
+        }
+
+        // If approved, update student GPA
+        if (status === 'approved') {
+            for (const id of ids) {
+                const { rows } = await query(`SELECT student_id FROM results WHERE id = $1`, [id]);
+                if (rows[0]) {
+                    await updateStudentGPA(rows[0].student_id);
+                }
+            }
+        }
+
+        res.json({ message: `${ids.length} result(s) ${status}.` });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// PUT hold results (admin) — sets approval_status to 'on_hold' with optional release time
+router.put('/hold', async (req, res) => {
+    const { ids, releaseAt } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required.' });
+    }
+    try {
+        for (const id of ids) {
+            if (releaseAt) {
+                await query(
+                    `UPDATE results SET approval_status = 'on_hold', release_at = $1 WHERE id = $2`,
+                    [releaseAt, id]
+                );
+            } else {
+                await query(
+                    `UPDATE results SET approval_status = 'on_hold', release_at = NULL WHERE id = $1`,
+                    [id]
+                );
+            }
+        }
+        res.json({ message: `${ids.length} result(s) put on hold.` });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// PUT release results immediately (admin)
+router.put('/release', async (req, res) => {
+    const { ids } = req.body;
+    if (!ids || !Array.isArray(ids) || ids.length === 0) {
+        return res.status(400).json({ error: 'ids array is required.' });
+    }
+    try {
+        for (const id of ids) {
+            await query(
+                `UPDATE results SET approval_status = 'approved', release_at = NULL WHERE id = $1`,
+                [id]
+            );
+        }
+        // Update GPA for affected students
+        const studentIds = new Set();
+        for (const id of ids) {
+            const { rows } = await query(`SELECT student_id FROM results WHERE id = $1`, [id]);
+            if (rows[0]) studentIds.add(rows[0].student_id);
+        }
+        for (const sid of studentIds) {
+            await updateStudentGPA(sid);
+        }
+        res.json({ message: `${ids.length} result(s) released.` });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// DELETE a result
+router.delete('/:id', async (req, res) => {
+    try {
+        await query(`DELETE FROM results WHERE id = $1`, [req.params.id]);
+        res.json({ message: 'deleted' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// Helper: Update student GPA based on approved results
+async function updateStudentGPA(studentId) {
+    try {
+        const { rows } = await query(
+            `SELECT score FROM results WHERE student_id = $1 AND approval_status = 'approved'`,
+            [studentId]
+        );
+        if (rows.length === 0) return;
+
+        // Calculate total score across all subjects
+        const totalScore = rows.reduce((sum, r) => sum + parseFloat(r.score), 0);
+        const maxPossible = rows.length * 100; // Each subject max is 100
+        const percentage = (totalScore / maxPossible) * 100;
+
+        let gpa;
+        if (percentage >= 90) gpa = 4.0;
+        else if (percentage >= 80) gpa = 3.0;
+        else if (percentage >= 70) gpa = 2.0;
+        else if (percentage >= 60) gpa = 1.0;
+        else gpa = 0.0;
+
+        await query(`UPDATE students SET gpa = $1 WHERE id = $2`, [gpa, studentId]);
+    } catch (e) { }
+}
 
 module.exports = router;

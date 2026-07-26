@@ -2,68 +2,157 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Portal Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Staff Portal — Elif PU College</title>
     <link rel="icon" type="image/png" href="/images/ALIF.png">
-    <!-- ... (your head content) ... -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .login-footer {
+            text-align: center;
+            margin-top: 1.5rem;
+            padding-top: 1.2rem;
+            border-top: 1px solid var(--border-color);
+        }
+        .login-footer a {
+            font-size: 0.82rem;
+            color: var(--text-secondary);
+            margin: 0 8px;
+            text-decoration: none;
+        }
+        .login-footer a:hover { color: var(--primary-dark); }
+        .login-footer .sep { color: var(--border-color); margin: 0 4px; }
+        .spinner {
+            display: inline-block;
+            width: 0.9rem; height: 0.9rem;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: spin 0.6s linear infinite;
+            vertical-align: middle;
+            margin-right: 5px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+    </style>
 </head>
 <body>
     <div class="login-container">
         <div class="card login-card shadow-lg">
             <div class="card-body p-5">
                 <div class="text-center mb-4">
-                    <img src="/images/ALIF.png" alt="Logo" style="width: 60px; height: 60px;">
+                    <img src="/images/ALIF.png" alt="School Logo" style="width: 72px; height: 72px; border-radius: 50%;">
                     <h3 class="mt-3 fw-bold">Portal Login</h3>
-                    <p class="text-muted">Please sign in to continue.</p>
+                    <p class="text-muted">Sign in to your account</p>
                 </div>
+
                 <div id="login-alert"></div>
+
                 <form id="login-form">
-                    <div class="mb-3"><label class="form-label">Email Address</label><input type="text" class="form-control" id="email" required></div>
-                    <div class="mb-3"><label class="form-label">Password</label><input type="password" class="form-control" id="password" required></div>
-                    <div class="d-grid"><button type="submit" class="btn btn-primary">Login</button></div>
+                    <div class="mb-3">
+                        <label for="identity" class="form-label">Email Address</label>
+                        <input type="email" class="form-control" id="identity" placeholder="Enter your email" required autofocus>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" placeholder="Enter your password" required>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="form-check">
+                            <input type="checkbox" class="form-check-input" id="rememberMe">
+                            <label class="form-check-label" for="rememberMe">Remember Me</label>
+                        </div>
+                        <a href="#" class="form-text text-decoration-none">Forgot Password?</a>
+                    </div>
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-primary btn-lg fw-bold" id="login-btn">
+                            <span id="login-btn-text">Login</span>
+                        </button>
+                    </div>
+                    <div class="login-footer">
+                        <a href="Student Results.html"><i class="fas fa-external-link-alt me-1"></i>Student Dashboard</a>
+                        <span class="sep">|</span>
+                        <a href="/HTML/index.html"><i class="fas fa-arrow-left me-1"></i>Back to Website</a>
+                    </div>
                 </form>
-                <div class="text-center mt-3"><a href="/HTML/index.html">Back to Website</a></div>
             </div>
         </div>
     </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const loginForm = document.getElementById('login-form');
-        const loginAlert = document.getElementById('login-alert');
-        loginForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            loginAlert.innerHTML = '';
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            try {
-                const response = await fetch('/api/auth/login', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ email, password })
-                });
-                const result = await response.json();
-                if (!response.ok) {
-                    throw new Error(result.message || 'Invalid email or password.');
-                }
-                const { user } = result;
-                sessionStorage.setItem('activeUser', JSON.stringify({ loggedIn: true, role: user.role, name: user.name, email: user.email, id: user.id }));
-                if (user.role === 'Admin') {
-                    sessionStorage.setItem('isAdminLoggedIn', 'true');
-                    window.location.href = 'admin.html';
-                } else if (user.role === 'Teacher') {
-                    window.location.href = 'teacher-dashboard.html';
-                } else if (user.role === 'Parent') {
-                    window.location.href = 'parent-dashboard.html';
-                } else {
-                    throw new Error('This user role does not have a dashboard.');
-                }
-            } catch (error) {
-                loginAlert.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var loginForm = document.getElementById('login-form');
+            var loginAlert = document.getElementById('login-alert');
+            var loginBtn = document.getElementById('login-btn');
+            var loginBtnText = document.getElementById('login-btn-text');
+
+            function showAlert(message, type) {
+                var cls = type === 'error' ? 'alert alert-danger' : type === 'success' ? 'alert alert-success' : 'alert alert-info';
+                loginAlert.innerHTML = '<div class="' + cls + '">' + message + '</div>';
             }
+
+            function setLoading(loading) {
+                loginBtn.disabled = loading;
+                loginBtnText.innerHTML = loading ? '<span class="spinner"></span>Signing In...' : 'Login';
+            }
+
+            loginForm.addEventListener('submit', async function (e) {
+                e.preventDefault();
+                loginAlert.innerHTML = '';
+                var email = document.getElementById('identity').value.trim();
+                var password = document.getElementById('password').value.trim();
+                if (!email || !password) { showAlert('Please fill in all fields.', 'error'); return; }
+                setLoading(true);
+                try {
+                    var response = await fetch('/api/auth/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ email: email, password: password })
+                    });
+                    var result = await response.json();
+                    if (!response.ok) {
+                        if (result.emailNotVerified) {
+                            showAlert('Please verify your email before logging in. <a href="#" id="resend-link" style="font-weight:600;">Resend verification</a>', 'info');
+                            var resendLink = document.getElementById('resend-link');
+                            if (resendLink) {
+                                resendLink.addEventListener('click', async function (ev) {
+                                    ev.preventDefault();
+                                    try {
+                                        var res = await fetch('/api/auth/resend-verification', {
+                                            method: 'POST', headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ email: email })
+                                        });
+                                        var data = await res.json();
+                                        showAlert(data.message || 'Verification email resent.', 'success');
+                                    } catch (_) { showAlert('Could not resend verification.', 'error'); }
+                                });
+                            }
+                            setLoading(false); return;
+                        }
+                        throw new Error(result.message || 'Invalid credentials.');
+                    }
+                    var user = result.user;
+                    sessionStorage.setItem('activeUser', JSON.stringify({
+                        loggedIn: true, role: user.role, name: user.name, email: user.email, id: user.id
+                    }));
+                    if (document.getElementById('rememberMe').checked) {
+                        localStorage.setItem('pl_remembered', email);
+                    } else {
+                        localStorage.removeItem('pl_remembered');
+                    }
+                    var redirectMap = { 'Admin': 'admin.html', 'Teacher': 'teacher-dashboard.html', 'Parent': 'parent_dashboard.html' };
+                    var target = redirectMap[user.role];
+                    if (!target) throw new Error('No dashboard for this role.');
+                    if (user.role === 'Admin') sessionStorage.setItem('isAdminLoggedIn', 'true');
+                    showAlert('Welcome, ' + user.name + '! Redirecting...', 'success');
+                    setTimeout(function () { window.location.href = target; }, 600);
+                } catch (err) {
+                    showAlert(err.message, 'error');
+                    setLoading(false);
+                }
+            });
         });
-    });
-</script>
+    </script>
 </body>
 </html>

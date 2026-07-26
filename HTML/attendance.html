@@ -9,29 +9,13 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        .attendance-btns .btn { margin: 0 2px; }
-        .present-toggle {
-            border-color: #198754;
-            color: #198754;
-            background: transparent;
-            min-width: 90px;
-        }
-        .present-toggle.on {
-            background-color: #198754;
-            border-color: #198754;
-            color: #fff;
-        }
-        .leave-btn {
-            border-color: #ffc107;
-            color: #d4a017;
-            background: transparent;
-            min-width: 90px;
-        }
-        .leave-btn.on {
-            background-color: #ffc107;
-            border-color: #ffc107;
-            color: #000;
-        }
+        .radio-group .btn-outline-success { border-color: #198754; color: #198754; }
+        .radio-group .btn-outline-success:hover, .radio-group .btn-check:checked+.btn-outline-success { background-color: #198754; border-color: #198754; color: #fff; }
+        .radio-group .btn-outline-danger { border-color: #dc3545; color: #dc3545; }
+        .radio-group .btn-outline-danger:hover, .radio-group .btn-check:checked+.btn-outline-danger { background-color: #dc3545; border-color: #dc3545; color: #fff; }
+        .radio-group .btn-outline-warning { border-color: #ffc107; color: #d4a017; }
+        .radio-group .btn-outline-warning:hover, .radio-group .btn-check:checked+.btn-outline-warning { background-color: #ffc107; border-color: #ffc107; color: #000; }
+        .radio-group .btn { min-width: 85px; }
     </style>
 </head>
 
@@ -52,6 +36,10 @@
                 <li><a href="classmanagment.html"><i class="fas fa-book-open"></i> <span>Class Management</span></a>
                 </li>
                 <li><a href="fee-managment.html"><i class="fas fa-dollar-sign"></i> <span>Fee Management</span></a></li>
+                <li><a href="results-approval.html"><i class="fas fa-check-double"></i> <span>Results Approval</span></a></li>
+                <li><a href="clearance.html"><i class="fas fa-id-card"></i> <span>Clearance</span></a></li>
+                <li><a href="exam-schedule.html"><i class="fas fa-pen-fancy"></i> <span>Exam Schedule</span></a></li>
+                <li><a href="timetable.html"><i class="fas fa-clock"></i> <span>Timetable</span></a></li>
                 <li><a href="attendance.html" class="active"><i class="fas fa-user-check"></i>
                         <span>Attendance</span></a></li>
                 <li><a href="event.html"><i class="fas fa-calendar-alt"></i> <span>Event Calendar</span></a></li>
@@ -69,6 +57,9 @@
         <!-- Main Content -->
         <div class="main-content">
             <nav class="top-navbar">
+                <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+                </div>
                 <h4 class="mb-0 ms-3">Attendance Management</h4>
             </nav>
             <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
@@ -154,9 +145,13 @@
                 <tr data-student-id="${s.id}">
                     <td>ELP${250000 + s.id}</td>
                     <td>${s.name}</td>
-                    <td class="text-center attendance-btns" role="group">
-                        <button type="button" class="btn btn-sm present-toggle ${isPresent ? 'on' : ''}" data-status="${isPresent ? 'Present' : 'Absent'}">${isPresent ? 'Present' : 'Absent'}</button>
-                        <button type="button" class="btn btn-sm leave-btn ${isOnLeave ? 'on' : ''}" data-status="On-Leave">On-Leave</button>
+                    <td class="text-center radio-group">
+                        <input type="radio" class="btn-check" name="attendance-${s.id}" id="present-${s.id}" value="Present" autocomplete="off" ${isPresent ? 'checked' : ''}>
+                        <label class="btn btn-outline-success btn-sm" for="present-${s.id}">Present</label>
+                        <input type="radio" class="btn-check" name="attendance-${s.id}" id="absent-${s.id}" value="Absent" autocomplete="off" ${(!isPresent && !isOnLeave) ? 'checked' : ''}>
+                        <label class="btn btn-outline-danger btn-sm" for="absent-${s.id}">Absent</label>
+                        <input type="radio" class="btn-check" name="attendance-${s.id}" id="leave-${s.id}" value="On-Leave" autocomplete="off" ${isOnLeave ? 'checked' : ''}>
+                        <label class="btn btn-outline-warning btn-sm" for="leave-${s.id}">On-Leave</label>
                     </td>
                 </tr>`;
                 }).join('');
@@ -166,37 +161,14 @@
                 fetchAttendanceForDate(datePicker.value);
             });
 
-            tbody.addEventListener('click', e => {
-                const btn = e.target.closest('.btn');
-                if (!btn) return;
-                const row = btn.closest('tr');
-                const toggle = row.querySelector('.present-toggle');
-                const leave = row.querySelector('.leave-btn');
-
-                if (btn.classList.contains('present-toggle')) {
-                    const isOn = toggle.classList.toggle('on');
-                    toggle.textContent = isOn ? 'Present' : 'Absent';
-                    toggle.dataset.status = isOn ? 'Present' : 'Absent';
-                    leave.classList.remove('on');
-                } else if (btn.classList.contains('leave-btn')) {
-                    const isOn = leave.classList.toggle('on');
-                    if (isOn) {
-                        toggle.classList.remove('on');
-                        toggle.textContent = 'Absent';
-                        toggle.dataset.status = 'Absent';
-                    }
-                }
-            });
-
             saveBtn.addEventListener('click', async () => {
                 const date = datePicker.value;
                 const records = [];
                 tbody.querySelectorAll('tr').forEach(row => {
                     const studentId = row.dataset.studentId;
                     if (!studentId) return;
-                    const leaveBtn = row.querySelector('.leave-btn');
-                    const toggleBtn = row.querySelector('.present-toggle');
-                    const status = leaveBtn.classList.contains('on') ? 'On-Leave' : toggleBtn.dataset.status;
+                    const checked = row.querySelector('.btn-check:checked');
+                    const status = checked ? checked.value : 'Absent';
                     records.push({ student_id: parseInt(studentId), status });
                 });
 
@@ -275,6 +247,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // etc.
 
 });
+    </script>
+    <script>
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() {
+    const saved = localStorage.getItem('elif-theme') || 'light';
+    document.body.setAttribute('data-theme', saved);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+})();
     </script>
 </body>
 

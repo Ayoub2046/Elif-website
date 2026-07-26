@@ -42,10 +42,30 @@ router.get('/dashboard-details', async (req, res) => {
         if (!teacher) return res.status(404).json({ error: 'Teacher account not found.' });
 
         const { rows: classes } = await query(
-            `SELECT name, room, students FROM classes WHERE teacherid = $1`, [teacher.id]
+            `SELECT id, name, room, students FROM classes WHERE teacherid = $1`, [teacher.id]
         );
         const totalStudents = classes.reduce((sum, c) => sum + (c.students || 0), 0);
         res.json({ ...teacher, classes: classes || [], totalStudents });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET classes assigned to a teacher (for attendance dropdown)
+router.get('/classes', async (req, res) => {
+    const { email } = req.query;
+    if (!email) return res.status(400).json({ error: 'Teacher email required.' });
+    try {
+        const { rows: teacherRows } = await query(
+            `SELECT id FROM users WHERE email = $1 AND role = 'Teacher'`, [email]
+        );
+        if (!teacherRows[0]) return res.status(404).json({ error: 'Teacher not found.' });
+        
+        const { rows: classes } = await query(
+            `SELECT id, name FROM classes WHERE teacherid = $1 ORDER BY name`, 
+            [teacherRows[0].id]
+        );
+        res.json(classes);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

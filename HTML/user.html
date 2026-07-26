@@ -26,6 +26,11 @@
                 <li><a href="student.html"><i class="fas fa-user-graduate"></i> <span>Student Records</span></a></li>
                 <li><a href="teacher.html"><i class="fas fa-chalkboard-teacher"></i> <span>Teacher Management</span></a></li>
                 <li><a href="admissions-admin.html"><i class="fas fa-file-signature"></i> <span>Manage Admissions</span></a></li>
+                <li><a href="fee-managment.html"><i class="fas fa-dollar-sign"></i> <span>Fee Management</span></a></li>
+                <li><a href="results-approval.html"><i class="fas fa-check-double"></i> <span>Results Approval</span></a></li>
+                <li><a href="clearance.html"><i class="fas fa-id-card"></i> <span>Clearance</span></a></li>
+                <li><a href="exam-schedule.html"><i class="fas fa-pen-fancy"></i> <span>Exam Schedule</span></a></li>
+                <li><a href="timetable.html"><i class="fas fa-clock"></i> <span>Timetable</span></a></li>
                 <li><a href="index.html"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a></li>
             </ul>
         </nav>
@@ -35,6 +40,9 @@
             <nav class="top-navbar">
                 <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
                 <h4 class="mb-0 ms-3">User Management</h4>
+                <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+                </div>
                 <div class="ms-auto d-flex align-items-center">
                     <!-- Topbar items can go here -->
                 </div>
@@ -105,10 +113,16 @@
                                 <option value="Parent">Parent</option>
                             </select>
                         </div>
-                        <!-- Password field for adding new users -->
+                        <!-- Password field for adding/editing users -->
                         <div class="mb-3" id="password-group">
                             <label class="form-label">Password</label>
-                            <input type="password" name="password" class="form-control">
+                            <div class="input-group">
+                                <input type="password" name="password" class="form-control" id="password-input">
+                                <button class="btn btn-outline-secondary" type="button" id="toggle-password">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                            </div>
+                            <small class="text-muted" id="password-hint"></small>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -182,6 +196,7 @@
                 userForm.reset();
                 // Show the password field for adding new users and make it required
                 document.getElementById('password-group').style.display = 'block';
+                document.getElementById('password-hint').textContent = '';
                 userForm.elements.password.required = true;
                 userForm.dataset.mode = 'add';
                 delete userForm.dataset.id;
@@ -201,9 +216,11 @@
                     userForm.elements.name.value = user.name;
                     userForm.elements.email.value = user.email;
                     userForm.elements.role.value = user.role;
-                    // Hide the password field when editing and make it not required
-                    document.getElementById('password-group').style.display = 'none';
+                    // Show password field in edit mode but make it optional
+                    document.getElementById('password-group').style.display = 'block';
+                    document.getElementById('password-hint').textContent = 'Leave blank to keep current password.';
                     userForm.elements.password.required = false;
+                    userForm.elements.password.value = '';
                     userModal.show();
                 } else if (button.classList.contains('btn-delete')) {
                     if (confirm(`Are you sure you want to delete user ${user.name}?`)) {
@@ -242,6 +259,7 @@
                             name: userForm.elements.name.value,
                             email: userForm.elements.email.value,
                             role: userForm.elements.role.value,
+                            password: userForm.elements.password.value || '',
                         };
                         response = await fetch(`${API_URL}/${id}`, {
                             method: 'PUT',
@@ -265,6 +283,19 @@
 
             // --- Initial Load ---
             fetchUsers();
+
+            // Password visibility toggle
+            document.getElementById('toggle-password').addEventListener('click', function() {
+                const passwordInput = document.getElementById('password-input');
+                const icon = this.querySelector('i');
+                if (passwordInput.type === 'password') {
+                    passwordInput.type = 'text';
+                    icon.classList.replace('fa-eye', 'fa-eye-slash');
+                } else {
+                    passwordInput.type = 'password';
+                    icon.classList.replace('fa-eye-slash', 'fa-eye');
+                }
+            });
         });
 
 
@@ -309,6 +340,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // etc.
 
 });
+    </script>
+    <script>
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() {
+    const saved = localStorage.getItem('elif-theme') || 'light';
+    document.body.setAttribute('data-theme', saved);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+})();
     </script>
 
 

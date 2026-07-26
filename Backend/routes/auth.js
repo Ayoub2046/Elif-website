@@ -4,6 +4,7 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const { query } = require('../database.js');
+const emailService = require('../services/emailService.js');
 const router = express.Router();
 
 // --- Registration Route ---
@@ -18,6 +19,12 @@ router.post('/register', async (req, res) => {
             `INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)`,
             [name, email, hashedPassword, role]
         );
+        
+        // Send verification email for all roles
+        emailService.sendWelcomeEmail(email, name).catch(err => {
+            console.error('Failed to send verification email:', err);
+        });
+        
         return res.status(201).json({ message: 'User registered successfully!' });
     } catch (err) {
         if (err.code === '23505') {
@@ -30,10 +37,17 @@ router.post('/register', async (req, res) => {
 // --- Login Route ---
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
+
     try {
         const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [email]);
         const user = rows[0];
         if (!user) return res.status(401).json({ message: 'Invalid credentials.' });
+
+        // Check if email is verified
+        if (user.isactive === false) {
+            return res.status(403).json({ message: 'Please verify your email before logging in.', emailNotVerified: true });
+        }
+
         const match = await bcrypt.compare(password, user.password);
         if (match) return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
         if (password === user.password) {
@@ -44,6 +58,26 @@ router.post('/login', async (req, res) => {
         return res.status(401).json({ message: 'Invalid credentials.' });
     } catch (err) {
         return res.status(500).json({ message: 'Database error.' });
+    }
+});
+
+// --- Resend Verification Route ---
+router.post('/resend-verification', async (req, res) => {
+    const { email } = req.body;
+    if (!email) return res.status(400).json({ error: 'Email is required.' });
+    try {
+        const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [email]);
+        const user = rows[0];
+        if (!user) return res.status(200).json({ message: 'If an account with that email exists, a verification link will be sent.' });
+        if (user.isactive !== false) {
+            return res.status(200).json({ message: 'This email is already verified.' });
+        }
+        emailService.sendWelcomeEmail(email, user.name).catch(err => {
+            console.error('Failed to resend verification email:', err);
+        });
+        return res.json({ message: 'Verification email sent. Please check your inbox.' });
+    } catch (err) {
+        return res.status(500).json({ error: 'Error sending verification email.' });
     }
 });
 

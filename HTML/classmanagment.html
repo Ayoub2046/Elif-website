@@ -27,6 +27,10 @@
         <li><a href="teacher.html"><i class="fas fa-chalkboard-teacher"></i> <span>Teacher Management</span></a></li>
         <li><a href="classmanagment.html" class="active"><i class="fas fa-book-open"></i> <span>Class Management</span></a></li>
         <li><a href="fee-managment.html"><i class="fas fa-dollar-sign"></i> <span>Fee Management</span></a></li>
+        <li><a href="results-approval.html"><i class="fas fa-check-double"></i> <span>Results Approval</span></a></li>
+        <li><a href="clearance.html"><i class="fas fa-id-card"></i> <span>Clearance</span></a></li>
+        <li><a href="exam-schedule.html"><i class="fas fa-pen-fancy"></i> <span>Exam Schedule</span></a></li>
+        <li><a href="timetable.html"><i class="fas fa-clock"></i> <span>Timetable</span></a></li>
         <li><a href="attendance.html"><i class="fas fa-user-check"></i> <span>Attendance</span></a></li>
         <li><a href="event.html"><i class="fas fa-calendar-alt"></i> <span>Event Calendar</span></a></li>
         <li><a href="communications.html"><i class="fas fa-comments"></i> <span>Communication</span></a></li>
@@ -45,6 +49,9 @@
             <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
             <h4 class="mb-0 ms-3">Class Management</h4>
             <div class="ms-auto d-flex align-items-center">
+                <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+                </div>
                 <button class="btn btn-primary btn-sm" id="btn-add-class"><i class="fas fa-plus me-1"></i> Add New Class</button>
             </div>
         </nav>
@@ -261,6 +268,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // etc.
 
 });
+</script>
+<script>
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() {
+    const saved = localStorage.getItem('elif-theme') || 'light';
+    document.body.setAttribute('data-theme', saved);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+})();
 </script>
 </body>
 </html>

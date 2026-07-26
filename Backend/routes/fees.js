@@ -8,7 +8,7 @@ const router = express.Router();
 router.get('/', async (req, res) => {
     try {
         const { rows } = await query(`
-            SELECT f.id, f.amount, f.status, f.duedate, s.name AS "studentName"
+            SELECT f.id, f.studentid, f.amount, f.status, f.duedate, s.name AS "studentName"
             FROM fees f
             JOIN students s ON f.studentid = s.id
         `);
@@ -43,6 +43,23 @@ router.put('/:id', async (req, res) => {
         res.json({ message: 'success' });
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+
+// GET fee records for a specific student
+router.get('/student/:studentId', async (req, res) => {
+    try {
+        const { rows } = await query(
+            `SELECT f.id, f.studentid, f.amount, f.status, f.duedate, s.name AS "studentName"
+             FROM fees f
+             JOIN students s ON f.studentid = s.id
+             WHERE f.studentid = $1
+             ORDER BY f.duedate DESC`,
+            [req.params.studentId]
+        );
+        res.json(rows);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

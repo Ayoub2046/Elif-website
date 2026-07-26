@@ -14,7 +14,11 @@
     </nav>
     <!-- Main Content -->
     <div class="main-content">
-        <nav class="top-navbar"><h4 class="mb-0 ms-3">Manage Admissions</h4></nav>
+        <nav class="top-navbar"><h4 class="mb-0 ms-3">Manage Admissions</h4>
+            <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+            </div>
+        </nav>
         <div class="content-area">
             <div class="card main-table-card">
                 <div class="card-header"><h6>Submitted Applications</h6></div>
@@ -42,6 +46,24 @@
         
         fetchApplications();
     });
+</script>
+<script>
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() {
+    const saved = localStorage.getItem('elif-theme') || 'light';
+    document.body.setAttribute('data-theme', saved);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+})();
 </script>
 </body>
 </html>

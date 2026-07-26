@@ -28,6 +28,11 @@
                 </li>
                 <li><a href="admissions-admin.html"><i class="fas fa-file-signature"></i> <span>Manage
                             Admissions</span></a></li>
+                <li><a href="fee-managment.html"><i class="fas fa-dollar-sign"></i> <span>Fee Management</span></a></li>
+                <li><a href="results-approval.html"><i class="fas fa-check-double"></i> <span>Results Approval</span></a></li>
+                <li><a href="clearance.html"><i class="fas fa-id-card"></i> <span>Clearance</span></a></li>
+                <li><a href="exam-schedule.html"><i class="fas fa-pen-fancy"></i> <span>Exam Schedule</span></a></li>
+                <li><a href="timetable.html"><i class="fas fa-clock"></i> <span>Timetable</span></a></li>
                 <!-- Add other links back here as needed -->
                 <li><a href="index.html" id="logout-link"><i class="fas fa-sign-out-alt"></i> <span>Logout</span></a>
                 </li>
@@ -36,7 +41,9 @@
         <!-- Main Content -->
         <div class="main-content">
             <nav class="top-navbar">
-                
+                <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
+                </div>
                 <h4 class="mb-0 ms-3">Student Records</h4>
                 <button class="btn btn-primary" id="sidebar-toggler" type="button"><i class="fas fa-bars"></i></button>
             </nav>
@@ -55,6 +62,7 @@
                                         <th>ID</th>
                                         <th>Name</th>
                                         <th>Grade</th>
+                                        <th>Parent</th>
                                         <th>Enrollment Date</th>
                                         <th>Birth Date</th>
                                         <th>Actions</th>
@@ -103,6 +111,12 @@
                                 <input type="date" name="birthDate" class="form-control" required>
                             </div>
                         </div>
+                        <div class="mb-3">
+                            <label class="form-label">Parent Account</label>
+                            <select name="parentid" class="form-select">
+                                <option value="">— No parent assigned —</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="modal-footer"><button type="button" class="btn btn-secondary"
                             data-bs-dismiss="modal">Close</button><button type="submit" class="btn btn-primary">Save
@@ -119,6 +133,19 @@
             const studentForm = document.getElementById('studentForm');
             const API_URL = '/api/students';
             let students = [];
+            let parents = [];
+
+            async function loadParents() {
+                try {
+                    const res = await fetch('/api/users/parents');
+                    parents = await res.json();
+                    const sel = studentForm.elements.parentid;
+                    sel.innerHTML = '<option value="">— No parent assigned —</option>';
+                    parents.forEach(p => {
+                        sel.innerHTML += `<option value="${p.id}">${p.name} (${p.email})</option>`;
+                    });
+                } catch { /* ignore */ }
+            }
 
             async function fetchStudents() {
                 try {
@@ -128,7 +155,7 @@
                     renderStudents();
                 } catch (error) {
                     console.error('Fetch Error:', error);
-                    document.getElementById('student-table-body').innerHTML = `<tr><td colspan="6" class="text-center text-danger">Error loading data.</td></tr>`;
+                    document.getElementById('student-table-body').innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error loading data.</td></tr>`;
                 }
             }
 
@@ -137,7 +164,7 @@
             function renderStudents() {
                 const tbody = document.getElementById('student-table-body');
                 if (students.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="6" class="text-center">No students found. Click 'Add New Student' to begin.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center">No students found. Click 'Add New Student' to begin.</td></tr>`;
                     return;
                 }
                 tbody.innerHTML = students.map(s => `
@@ -145,6 +172,7 @@
                     <td>ELP${250000 + s.id}</td>
                     <td>${s.name}</td>
                     <td>${s.grade}</td>
+                    <td>${s.parent_name || '<span class="text-muted">—</span>'}</td>
                     <td>${formatDate(s.enrollmentdate)}</td>
                     <td>${formatDate(s.birthdate)}</td>
                     <td class="action-buttons">
@@ -160,6 +188,7 @@
                 studentForm.reset();
                 studentForm.dataset.mode = 'add';
                 delete studentForm.dataset.id;
+                if (studentForm.elements.parentid.options.length <= 1) loadParents();
                 studentModal.show();
             });
 
@@ -178,6 +207,7 @@
                     studentForm.elements.attendance.value = student.attendance || '';
                     studentForm.elements.enrollmentDate.value = student.enrollmentdate;
                     studentForm.elements.birthDate.value = student.birthdate;
+                    studentForm.elements.parentid.value = student.parentid || '';
                     studentModal.show();
                 } else if (button.classList.contains('btn-delete')) {
                     if (confirm(`Are you sure you want to delete ${student.name}?`)) {
@@ -194,12 +224,14 @@
                 e.preventDefault();
                 const mode = studentForm.dataset.mode;
                 const id = studentForm.dataset.id;
+                const pid = studentForm.elements.parentid.value;
                 const studentData = {
                     name: studentForm.elements.name.value,
                     grade: studentForm.elements.grade.value,
                     enrollmentDate: studentForm.elements.enrollmentDate.value,
                     birthDate: studentForm.elements.birthDate.value,
-                    attendance: parseInt(studentForm.elements.attendance.value) || null
+                    attendance: parseInt(studentForm.elements.attendance.value) || null,
+                    parentid: pid ? parseInt(pid) : null
                 };
 
                 let url = API_URL;
@@ -224,6 +256,7 @@
             });
 
             fetchStudents();
+            loadParents();
         });
 
 
@@ -266,6 +299,24 @@ document.addEventListener('DOMContentLoaded', () => {
     // etc.
 
 });
+    </script>
+    <script>
+// Theme Toggle
+function toggleTheme() {
+    const body = document.body;
+    const current = body.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    body.setAttribute('data-theme', next);
+    localStorage.setItem('elif-theme', next);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = next === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+}
+(function() {
+    const saved = localStorage.getItem('elif-theme') || 'light';
+    document.body.setAttribute('data-theme', saved);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+})();
     </script>
 </body>
 

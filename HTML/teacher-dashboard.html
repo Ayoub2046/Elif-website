@@ -3,100 +3,719 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Teacher Dashboard | Elif Pu Collage</title>
+    <title>Teacher Dashboard | Elif PU College</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
     <link rel="stylesheet" href="/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        body { background-color: #f4f7fc; }
-        .dashboard-header { background-color: var(--primary-color); color: white; padding: 2rem; border-radius: 0.5rem; }
-        .stat-card { background-color: white; padding: 1.5rem; border-radius: 0.5rem; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+        body { background-color: var(--bg-body, #f0f1f0); }
+        .td-wrap { max-width: 1300px; margin: 0 auto; padding: 1.5rem; }
+
+        /* === HEADER === */
+        .td-header {
+            background: linear-gradient(135deg, #0f510e 0%, #1b9e1b 100%);
+            border-radius: 18px;
+            padding: 1.5rem 2rem;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 6px 24px rgba(15,81,14,0.18);
+        }
+        .td-header-left h1 { font-weight: 800; font-size: 1.4rem; margin: 0; color: #fff; }
+        .td-header-left p { opacity: 0.8; font-size: 0.82rem; margin: 2px 0 0; }
+        .td-header-right { display: flex; align-items: center; gap: 0.8rem; }
+        .td-header-right .btn-light { border-radius: 10px; font-weight: 600; font-size: 0.82rem; padding: 0.4rem 1rem; }
+
+        /* === NAV === */
+        .td-nav {
+            display: flex;
+            gap: 3px;
+            background: var(--bg-card, #fff);
+            border-radius: 12px;
+            padding: 4px;
+            margin-bottom: 1.2rem;
+            border: 1px solid var(--border-color, #e0e0e0);
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+        .td-nav .td-nav-btn {
+            padding: 0.55rem 1rem;
+            border-radius: 10px;
+            border: none;
+            background: transparent;
+            font-weight: 600;
+            font-size: 0.78rem;
+            color: var(--text-secondary, #888);
+            cursor: pointer;
+            transition: all 0.15s;
+            font-family: inherit;
+            white-space: nowrap;
+            display: flex; align-items: center; gap: 5px;
+        }
+        .td-nav .td-nav-btn:hover { background: var(--primary-lightest, #e8f8e8); color: var(--primary-dark, #0f510e); }
+        .td-nav .td-nav-btn.active { background: var(--primary-dark, #0f510e); color: #fff; }
+        body[data-theme="dark"] .td-nav .td-nav-btn:hover { background: rgba(29,217,29,0.08); color: #1dd91d; }
+        body[data-theme="dark"] .td-nav .td-nav-btn.active { background: #1dd91d; color: #1a1d1a; }
+
+        /* === SECTIONS === */
+        .td-section { display: none; }
+        .td-section.active { display: block; }
+
+        /* === STAT CARDS === */
+        .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 1rem; margin-bottom: 1.2rem; }
+        .stat-card { background: var(--bg-card, #fff); border-radius: 12px; padding: 1.1rem 1.2rem; border: 1px solid var(--border-color, #e0e0e0); border-left: 4px solid; box-shadow: var(--shadow, 0 2px 10px rgba(0,0,0,0.04)); }
+        .stat-card .stat-icon { font-size: 1.3rem; margin-bottom: 0.3rem; }
+        .stat-card h6 { font-size: 0.68rem; color: var(--text-secondary, #888); font-weight: 600; margin: 0 0 2px; text-transform: uppercase; letter-spacing: 0.3px; }
+        .stat-card .stat-val { font-size: 1.4rem; font-weight: 800; color: var(--text-primary, #1a1a1a); margin: 0; line-height: 1.2; }
+        body[data-theme="dark"] .stat-card .stat-val { color: #e8f8e8; }
+
+        /* === CARDS === */
+        .td-card { background: var(--bg-card, #fff); border-radius: 12px; border: 1px solid var(--border-color, #e0e0e0); box-shadow: var(--shadow, 0 2px 10px rgba(0,0,0,0.04)); margin-bottom: 1.2rem; overflow: hidden; }
+        .td-card-h { padding: 0.9rem 1.2rem; border-bottom: 1px solid var(--border-color, #e0e0e0); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.4rem; }
+        .td-card-h h5 { font-weight: 700; font-size: 0.9rem; margin: 0; color: var(--text-primary, #1a1a1a); display: flex; align-items: center; gap: 6px; }
+        .td-card-b { padding: 1.2rem; }
+        .td-card-b.p-0 { padding: 0; }
+
+        /* === CHART CONTAINERS === */
+        .chart-box { position: relative; height: 200px; width: 100%; }
+
+        /* === TIMETABLE GRID === */
+        .tt-grid { display: grid; gap: 1px; background: var(--border-color, #e0e0e0); border-radius: 8px; overflow: hidden; }
+        .tt-grid > div { background: var(--bg-card, #fff); padding: 0.5rem 0.4rem; text-align: center; font-size: 0.72rem; min-height: 48px; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+        .tt-grid .tt-h { font-weight: 700; background: #0f510e; color: #fff; font-size: 0.68rem; text-transform: uppercase; letter-spacing: 0.3px; padding: 0.5rem 0.3rem; }
+        .tt-grid .tt-time { font-weight: 600; color: #666; font-size: 0.62rem; background: #f4f7f4; }
+        .tt-grid .tt-subj { font-weight: 700; color: var(--primary-dark, #0f510e); font-size: 0.72rem; }
+        .tt-grid .tt-room { font-size: 0.58rem; color: #999; }
+        .tt-grid .tt-empty { color: #ddd; font-size: 0.65rem; background: #fafcfa; }
+        .tt-grid .tt-now { background: #e8f5e8; box-shadow: inset 0 0 0 1px #1dd91d; }
+        body[data-theme="dark"] .tt-grid > div { background: #252825; }
+        body[data-theme="dark"] .tt-grid .tt-h { background: #1a2e1a; }
+        body[data-theme="dark"] .tt-grid .tt-time { background: #1a1d1a; color: #aaa; }
+        body[data-theme="dark"] .tt-grid .tt-subj { color: #1dd91d; }
+        body[data-theme="dark"] .tt-grid .tt-empty { background: #1a1d1a; color: #444; }
+        body[data-theme="dark"] .tt-grid .tt-now { background: #1a2e1a; }
+
+        /* === ACTIVITY FEED === */
+        .act-item { display: flex; align-items: flex-start; gap: 0.7rem; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color, #f0f0f0); }
+        .act-item:last-child { border-bottom: none; }
+        .act-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0; }
+        .act-content { flex: 1; font-size: 0.8rem; color: var(--text-primary, #1a1a1a); }
+        .act-content .act-title { font-weight: 600; }
+        .act-content .act-meta { font-size: 0.7rem; color: var(--text-secondary, #888); margin-top: 1px; }
+
+        /* === STUDENT DIRECTORY === */
+        .student-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-lightest, #e8f8e8); border-radius: 20px; padding: 0.25rem 0.7rem 0.25rem 0.25rem; font-size: 0.78rem; font-weight: 500; color: var(--primary-dark, #0f510e); cursor: pointer; transition: all 0.15s; margin: 3px; }
+        .student-chip:hover { background: var(--primary-dark, #0f510e); color: #fff; }
+        .student-chip .sc-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--primary, #1dd91d); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; flex-shrink: 0; }
+        body[data-theme="dark"] .student-chip { background: rgba(29,217,29,0.08); color: #1dd91d; }
+        body[data-theme="dark"] .student-chip:hover { background: #1dd91d; color: #1a1d1a; }
+
+        /* === EXAM PILLS === */
+        .exam-pill { display: flex; align-items: center; gap: 8px; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color, #f0f0f0); }
+        .exam-pill:last-child { border-bottom: none; }
+        .exam-date-box { text-align: center; min-width: 48px; background: var(--primary-lightest, #e8f8e8); border-radius: 8px; padding: 0.3rem 0.5rem; }
+        .exam-date-box .ed-day { font-size: 1rem; font-weight: 800; color: var(--primary-dark, #0f510e); line-height: 1; }
+        .exam-date-box .ed-mon { font-size: 0.55rem; text-transform: uppercase; color: var(--primary-dark, #0f510e); letter-spacing: 0.3px; }
+        .exam-info { flex: 1; }
+        .exam-info .ei-subj { font-weight: 600; font-size: 0.85rem; color: var(--text-primary, #1a1a1a); }
+        .exam-info .ei-meta { font-size: 0.7rem; color: var(--text-secondary, #888); }
+
+        /* === MODAL === */
+        .modal-content { border-radius: 14px; border: none; }
+        .modal-header { border-radius: 14px 14px 0 0; }
+
+        .td-alert { margin-top: 0.8rem; }
+
+        @media (max-width: 768px) {
+            .td-wrap { padding: 1rem; }
+            .td-header { flex-direction: column; text-align: center; padding: 1.2rem; gap: 0.7rem; }
+            .td-header-left h1 { font-size: 1.2rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
+            .stat-card .stat-val { font-size: 1.2rem; }
+            .td-nav .td-nav-btn { font-size: 0.7rem; padding: 0.45rem 0.7rem; }
+        }
+        @media (max-width: 480px) {
+            .stat-grid { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body>
-    <div class="container py-5">
-        <!-- Header -->
-        <div class="dashboard-header mb-4 d-flex justify-content-between align-items-center">
-            <div>
-                <h1 class="display-5 mb-0" id="teacher-name">Welcome!</h1>
-                <p class="lead mb-0" id="teacher-subject"></p>
+    <div class="td-wrap">
+        <!-- HEADER -->
+        <div class="td-header">
+            <div class="td-header-left">
+                <h1 id="teacher-name">Welcome!</h1>
+                <p id="teacher-subject"></p>
             </div>
-            <button id="logout-btn" class="btn btn-light"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
-        </div>
-
-        <!-- Summary Cards -->
-        <div class="row g-4 mb-4">
-            <div class="col-md-6">
-                <div class="stat-card">
-                    <h4>Total Students Taught</h4>
-                    <p class="fs-1 fw-bold text-primary mb-0" id="total-students">0</p>
+            <div class="td-header-right">
+                <span style="font-size:0.78rem;opacity:0.7;" id="header-date"></span>
+                <div class="theme-toggle" onclick="toggleTheme()" style="cursor:pointer;">
+                    <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
                 </div>
-            </div>
-            <div class="col-md-6">
-                <div class="stat-card">
-                    <h4>Assigned Classes</h4>
-                    <p class="fs-1 fw-bold text-primary mb-0" id="class-count">0</p>
-                </div>
+                <button id="logout-btn" class="btn btn-light"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
             </div>
         </div>
 
-        <!-- Class List -->
-        <div class="card">
-            <div class="card-header"><h4 class="mb-0">My Classes</h4></div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">
-                        <thead><tr><th>Class Name</th><th>Room Number</th><th>Number of Students</th></tr></thead>
-                        <tbody id="class-list-body"></tbody>
-                    </table>
+        <!-- NAV -->
+        <div class="td-nav">
+            <button class="td-nav-btn active" data-section="overview"><i class="fas fa-home"></i> Overview</button>
+            <button class="td-nav-btn" data-section="attendance"><i class="fas fa-user-check"></i> Attendance</button>
+            <button class="td-nav-btn" data-section="students"><i class="fas fa-users"></i> Students</button>
+            <button class="td-nav-btn" data-section="results"><i class="fas fa-file-alt"></i> Results</button>
+            <button class="td-nav-btn" data-section="timetable"><i class="fas fa-calendar-week"></i> Schedule</button>
+        </div>
+
+        <!-- ======================== OVERVIEW ======================== -->
+        <div class="td-section active" id="section-overview">
+            <div class="stat-grid" id="overview-stats"></div>
+            <div class="row g-3">
+                <div class="col-lg-7">
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-calendar-week"></i> Weekly Timetable</h5><small class="text-muted" id="tt-week-label"></small></div>
+                        <div class="td-card-b p-0" id="overview-timetable"></div>
+                    </div>
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-calendar-alt"></i> Upcoming Exams</h5></div>
+                        <div class="td-card-b" id="overview-exams"></div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-history"></i> Recent Activity</h5></div>
+                        <div class="td-card-b" id="overview-activity"></div>
+                    </div>
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-bolt"></i> Quick Actions</h5></div>
+                        <div class="td-card-b">
+                            <div class="d-flex flex-wrap gap-2">
+                                <button class="btn btn-sm btn-outline-success" onclick="document.querySelector('[data-section=attendance]').click()"><i class="fas fa-user-check me-1"></i>Take Attendance</button>
+                                <button class="btn btn-sm btn-outline-primary" onclick="document.querySelector('[data-section=results]').click()"><i class="fas fa-file-alt me-1"></i>Enter Results</button>
+                                <button class="btn btn-sm btn-outline-info" onclick="document.querySelector('[data-section=students]').click()"><i class="fas fa-users me-1"></i>View Students</button>
+                                <button class="btn btn-sm btn-outline-secondary" onclick="document.querySelector('[data-section=timetable]').click()"><i class="fas fa-calendar-week me-1"></i>Schedule</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================== ATTENDANCE ======================== -->
+        <div class="td-section" id="section-attendance">
+            <div class="row g-3">
+                <div class="col-lg-5">
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-sliders-h"></i> Controls</h5></div>
+                        <div class="td-card-b">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Class</label>
+                                <select id="class-select" class="form-select"><option value="">-- Choose --</option></select>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Date</label>
+                                <input type="date" id="attendance-date" class="form-control">
+                            </div>
+                            <button id="load-attendance-btn" class="btn btn-primary w-100" disabled><i class="fas fa-sync me-1"></i> Load Roster</button>
+                        </div>
+                    </div>
+                    <div class="stat-grid d-none" id="attendance-stats-row">
+                        <div class="stat-card" style="border-color:#1dd91d;"><div class="stat-icon" style="color:#1dd91d;"><i class="fas fa-users"></i></div><h6>Total</h6><p class="stat-val" id="att-total">0</p></div>
+                        <div class="stat-card" style="border-color:#28a745;"><div class="stat-icon" style="color:#28a745;"><i class="fas fa-check-circle"></i></div><h6>Present</h6><p class="stat-val" id="att-present">0</p></div>
+                        <div class="stat-card" style="border-color:#e74c3c;"><div class="stat-icon" style="color:#e74c3c;"><i class="fas fa-times-circle"></i></div><h6>Absent</h6><p class="stat-val" id="att-absent">0</p></div>
+                        <div class="stat-card" style="border-color:#f39c12;"><div class="stat-icon" style="color:#f39c12;"><i class="fas fa-hourglass-half"></i></div><h6>Leave</h6><p class="stat-val" id="att-leave">0</p></div>
+                    </div>
+                </div>
+                <div class="col-lg-7">
+                    <div class="td-card d-none" id="attendance-card">
+                        <div class="td-card-h">
+                            <h5><i class="fas fa-check-square"></i> Mark Attendance</h5>
+                            <button id="save-attendance-btn" class="btn btn-success btn-sm" disabled><i class="fas fa-save me-1"></i> Save</button>
+                        </div>
+                        <div class="td-card-b p-0">
+                            <div class="table-responsive"><table class="table table-hover mb-0"><thead><tr><th>ID</th><th>Name</th><th style="width:38%;">Status</th></tr></thead><tbody id="attendance-table-body"></tbody></table></div>
+                        </div>
+                    </div>
+                    <div id="attendance-alert"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ======================== STUDENTS ======================== -->
+        <div class="td-section" id="section-students">
+            <div class="td-card">
+                <div class="td-card-h">
+                    <h5><i class="fas fa-search"></i> Student Directory</h5>
+                    <div style="max-width:260px;width:100%;"><input type="text" class="form-control form-control-sm" id="student-search" placeholder="Search by name or ID..."></div>
+                </div>
+                <div class="td-card-b" id="student-directory"></div>
+            </div>
+        </div>
+
+        <!-- ======================== RESULTS ======================== -->
+        <div class="td-section" id="section-results">
+            <div class="row g-3">
+                <div class="col-lg-8">
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-edit"></i> Enter Exam Scores</h5>
+                            <div class="d-flex gap-2 align-items-center">
+                                <select id="results-class-select" class="form-select form-select-sm" style="width:auto;"><option value="">Class</option></select>
+                                <input type="text" id="results-subject" class="form-control form-control-sm" placeholder="Subject" style="width:130px;">
+                                <input type="date" id="results-date" class="form-control form-control-sm" style="width:140px;">
+                                <button id="load-results-students-btn" class="btn btn-primary btn-sm" disabled><i class="fas fa-sync"></i></button>
+                            </div>
+                        </div>
+                        <div class="td-card-b d-none" id="results-entry-card">
+                            <div class="alert alert-info py-2 mb-2" style="font-size:0.8rem;"><i class="fas fa-info-circle me-1"></i> Scores go to admin for approval.</div>
+                            <div class="table-responsive"><table class="table table-hover mb-0" id="results-entry-table"><thead><tr><th rowspan="2">Student</th><th colspan="2" class="text-center" style="background:#0f510e;color:#fff;">Quiz</th><th colspan="2" class="text-center" style="background:#17a2b8;color:#fff;">Sem</th><th rowspan="2" class="text-center" style="background:#f39c12;">Mid</th><th rowspan="2" class="text-center" style="background:#e74c3c;color:#fff;">Final</th><th rowspan="2" class="text-center">Total</th></tr><tr><th class="text-center" style="background:#1b9e1b;color:#fff;">Q1</th><th class="text-center" style="background:#1b9e1b;color:#fff;">Q2</th><th class="text-center" style="background:#138496;color:#fff;">S1</th><th class="text-center" style="background:#138496;color:#fff;">S2</th></tr></thead><tbody id="results-table-body"></tbody></table></div>
+                            <div class="mt-2 text-end"><button id="submit-results-btn" class="btn btn-success btn-sm"><i class="fas fa-paper-plane me-1"></i> Submit for Approval</button></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-history"></i> Submitted Results</h5></div>
+                        <div class="td-card-b p-0" id="submitted-results-list" style="max-height:400px;overflow-y:auto;"></div>
+                    </div>
+                </div>
+            </div>
+            <div id="results-alert"></div>
+        </div>
+
+        <!-- ======================== TIMETABLE / SCHEDULE ======================== -->
+        <div class="td-section" id="section-timetable">
+            <div class="row g-3">
+                <div class="col-lg-7">
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-calendar-week"></i> Weekly Timetable</h5>
+                            <select id="tt-class-select" class="form-select form-select-sm" style="width:auto;"><option value="">Select class</option></select>
+                        </div>
+                        <div class="td-card-b p-0" id="timetable-full"></div>
+                    </div>
+                </div>
+                <div class="col-lg-5">
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-calendar-alt"></i> Exam Schedule</h5></div>
+                        <div class="td-card-b" id="exam-schedule-full"></div>
+                    </div>
+                    <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-chart-line"></i> Class Attendance Trend</h5></div>
+                        <div class="td-card-b">
+                            <select id="trend-class-select" class="form-select form-select-sm mb-2"><option value="">Select class for trend</option></select>
+                            <div class="chart-box"><canvas id="trendChart"></canvas></div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-<script>
+    <!-- Student Detail Modal -->
+    <div class="modal fade" id="studentModal" tabindex="-1">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background:linear-gradient(135deg,#0f510e,#1b9e1b);color:#fff;"><h5 class="modal-title" id="modal-student-name">Student</h5><button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body" id="modal-student-body"></div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const activeUser = JSON.parse(sessionStorage.getItem('activeUser'));
-        if (!activeUser || activeUser.role !== 'Teacher') {
-            window.location.replace('portal_login.html');
+        if (!activeUser || activeUser.role !== 'Teacher') { window.location.replace('portal_login.html'); return; }
+
+        // === UTILITIES ===
+        const $ = id => document.getElementById(id);
+        const $$ = (sel, ctx) => (ctx||document).querySelectorAll(sel);
+        const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}) : '—';
+        const fmtTime = t => { if (!t) return '—'; const p=t.split(':'), h=parseInt(p[0]), m=p[1]; return (h%12||12)+':'+m+(h<12?'AM':'PM'); };
+        const now = new Date();
+        $('header-date').textContent = now.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+        $('attendance-date').value = now.toISOString().split('T')[0];
+        $('attendance-date').max = now.toISOString().split('T')[0];
+        $('results-date').value = now.toISOString().split('T')[0];
+
+        let teacherClasses = [], allStudents = [], currentAttendance = {}, currentResultsStudents = {};
+        let trendChart = null;
+        const EXAM_TYPES = {quiz1:{max:5},quiz2:{max:5},sem1:{max:5},sem2:{max:5},midterm:{max:40},final:{max:40}};
+
+        // === NAV ===
+        $$('[data-section]').forEach(btn => btn.addEventListener('click', () => {
+            $$('[data-section]').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            $$('.td-section').forEach(s => s.classList.remove('active'));
+            $('section-'+btn.dataset.section).classList.add('active');
+        }));
+
+        $('logout-btn').addEventListener('click', () => { sessionStorage.clear(); window.location.replace('portal_login.html'); });
+
+        // === LOAD TEACHER DATA ===
+        try {
+            const res = await fetch(`/api/teachers/dashboard-details?email=${activeUser.email}`);
+            if (!res.ok) throw new Error('Failed to load');
+            const data = await res.json();
+            $('teacher-name').textContent = `Welcome, ${data.name}!`;
+            $('teacher-subject').textContent = `Subject: ${data.subject || 'Not Set'} · ${data.classes.length} class(es) · ${data.totalStudents} students`;
+
+            // Stats overview
+            $('overview-stats').innerHTML = `
+                <div class="stat-card" style="border-color:#1dd91d;"><div class="stat-icon" style="color:#1dd91d;"><i class="fas fa-user-graduate"></i></div><h6>Students</h6><p class="stat-val">${data.totalStudents}</p></div>
+                <div class="stat-card" style="border-color:#28a745;"><div class="stat-icon" style="color:#28a745;"><i class="fas fa-chalkboard"></i></div><h6>Classes</h6><p class="stat-val">${data.classes.length}</p></div>
+                <div class="stat-card" style="border-color:#f39c12;"><div class="stat-icon" style="color:#f39c12;"><i class="fas fa-book"></i></div><h6>Subject</h6><p class="stat-val" style="font-size:1rem;">${data.subject || 'N/A'}</p></div>
+                <div class="stat-card" style="border-color:#17a2b8;"><div class="stat-icon" style="color:#17a2b8;"><i class="fas fa-clock"></i></div><h6>Status</h6><p class="stat-val" style="font-size:1rem;">Active</p></div>
+            `;
+
+            // Load classes for dropdowns
+            const clsRes = await fetch(`/api/teachers/classes?email=${activeUser.email}`);
+            teacherClasses = await clsRes.json();
+            ['class-select','results-class-select','tt-class-select','trend-class-select'].forEach(id => {
+                const el = $(id);
+                teacherClasses.forEach(c => el.innerHTML += `<option value="${c.id}">${c.name}</option>`);
+            });
+            if (teacherClasses.length > 0) {
+                $('load-attendance-btn').disabled = false;
+                $('load-results-students-btn').disabled = false;
+            }
+
+            // Load all students for directory
+            const allStudentPromises = data.classes.map(c => fetch(`/api/classes/${c.id}/students`).then(r => r.json()));
+            const allStudentResults = await Promise.all(allStudentPromises);
+            allStudents = allStudentResults.flat();
+            renderStudentDirectory(allStudents);
+
+            // === OVERVIEW WIDGETS ===
+            if (data.classes.length > 0) {
+                renderTimetable(data.classes[0].id, 'overview-timetable');
+                loadExamSchedule(data.classes[0].id, 'overview-exams');
+            } else {
+                $('overview-timetable').innerHTML = '<div class="p-3 text-center text-muted">No classes assigned.</div>';
+                $('overview-exams').innerHTML = '<div class="p-3 text-center text-muted">No classes assigned.</div>';
+            }
+            loadRecentActivity(activeUser.id);
+
+            // Auto-select first class for trend
+            if (teacherClasses.length > 0) {
+                $('trend-class-select').value = teacherClasses[0].id;
+                loadTrendChart(teacherClasses[0].id);
+            }
+
+        } catch (err) {
+            document.body.innerHTML = `<div class="td-wrap"><div class="alert alert-danger">${err.message}</div></div>`;
             return;
         }
 
-        document.getElementById('logout-btn').addEventListener('click', () => {
-            sessionStorage.clear();
-            window.location.replace('portal_login.html');
+        // === TIMETABLE RENDERER ===
+        async function renderTimetable(classId, targetId) {
+            const el = $(targetId);
+            try {
+                const res = await fetch(`/api/timetables/class/${classId}`);
+                const entries = await res.json();
+                const days = ['Monday','Tuesday','Wednesday','Thursday','Friday'];
+                const slots = {};
+                entries.forEach(e => {
+                    const key = e.start_time+'-'+e.end_time;
+                    if (!slots[key]) slots[key] = {start:e.start_time, end:e.end_time, entries:{}};
+                    slots[key].entries[e.day_of_week] = e;
+                });
+                const slotKeys = Object.keys(slots).sort((a,b) => slots[a].start.localeCompare(slots[b].start));
+                if (slotKeys.length === 0) { el.innerHTML = '<div class="p-3 text-center text-muted">No timetable for this class.</div>'; return; }
+                $('tt-week-label').textContent = 'Week of ' + now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+                let html = '<div class="tt-grid" style="grid-template-columns:60px repeat(5,1fr);">';
+                html += '<div class="tt-h"></div>';
+                days.forEach(d => html += '<div class="tt-h">'+d.substring(0,3)+'</div>');
+                slotKeys.forEach(sk => {
+                    const sl = slots[sk];
+                    html += '<div class="tt-time">'+fmtTime(sl.start)+'<br>'+fmtTime(sl.end)+'</div>';
+                    days.forEach(d => {
+                        const e = sl.entries[d];
+                        if (e) html += '<div><div class="tt-subj">'+e.subject+'</div><div class="tt-room">'+e.room+'</div></div>';
+                        else html += '<div class="tt-empty">—</div>';
+                    });
+                });
+                html += '</div>';
+                el.innerHTML = html;
+            } catch(e) { el.innerHTML = '<div class="p-3 text-center text-muted">Could not load timetable.</div>'; }
+        }
 
+        // === EXAM SCHEDULE ===
+        async function loadExamSchedule(classId, targetId) {
+            const el = $(targetId);
+            try {
+                const res = await fetch(`/api/exam-schedules/class/${classId}`);
+                const exams = await res.json();
+                if (exams.length === 0) { el.innerHTML = '<div class="text-center text-muted py-3" style="font-size:0.85rem;">No exams scheduled.</div>'; return; }
+                el.innerHTML = exams.map(e => {
+                    const dt = new Date(e.exam_date);
+                    return `<div class="exam-pill">
+                        <div class="exam-date-box"><div class="ed-day">${dt.getDate()}</div><div class="ed-mon">${dt.toLocaleString('en',{month:'short'})}</div></div>
+                        <div class="exam-info"><div class="ei-subj">${e.subject}</div><div class="ei-meta">${fmtTime(e.start_time)} — ${fmtTime(e.end_time)} · ${e.room||'N/A'}</div></div>
+                    </div>`;
+                }).join('');
+            } catch(e) { el.innerHTML = '<div class="text-center text-muted py-3">Error loading exams.</div>'; }
+        }
+
+        // === RECENT ACTIVITY ===
+        async function loadRecentActivity(teacherId) {
+            const el = $('overview-activity');
+            try {
+                const res = await fetch(`/api/results/teacher/${teacherId}`);
+                const results = await res.json();
+                if (results.length === 0) { el.innerHTML = '<div class="text-center text-muted py-3" style="font-size:0.85rem;">No activity yet.</div>'; return; }
+                const recent = results.slice(0, 8);
+                el.innerHTML = recent.map(r => {
+                    const color = r.approval_status === 'approved' ? '#28a745' : r.approval_status === 'rejected' ? '#e74c3c' : '#f39c12';
+                    const label = r.approval_status === 'approved' ? 'Approved' : r.approval_status === 'rejected' ? 'Rejected' : 'Pending';
+                    return `<div class="act-item"><div class="act-dot" style="background:${color};"></div><div class="act-content"><div class="act-title">${r.studentName} — ${r.subject}</div><div class="act-meta">${label} · ${fmtDate(r.submitted_at)}</div></div></div>`;
+                }).join('');
+            } catch(e) { el.innerHTML = '<div class="text-center text-muted py-3">No activity.</div>'; }
+        }
+
+        // === STUDENT DIRECTORY ===
+        function renderStudentDirectory(students) {
+            const el = $('student-directory');
+            if (students.length === 0) { el.innerHTML = '<div class="text-center text-muted py-3">No students assigned.</div>'; return; }
+            el.innerHTML = students.map(s => {
+                const initials = (s.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+                return `<span class="student-chip" data-student='${JSON.stringify(s)}'><span class="sc-avatar">${initials}</span>${s.name}</span>`;
+            }).join('');
+            el.querySelectorAll('.student-chip').forEach(chip => chip.addEventListener('click', function() {
+                const s = JSON.parse(this.dataset.student);
+                openStudentModal(s);
+            }));
+            // Search
+            $('student-search').addEventListener('input', function() {
+                const q = this.value.toLowerCase();
+                el.querySelectorAll('.student-chip').forEach(chip => {
+                    const name = chip.textContent.toLowerCase();
+                    chip.style.display = name.includes(q) ? 'inline-flex' : 'none';
+                });
+            });
+        }
+
+        // === STUDENT MODAL ===
+        async function openStudentModal(student) {
+            $('modal-student-name').textContent = student.name;
+            const body = $('modal-student-body');
+            body.innerHTML = '<div class="text-center py-3"><div class="spinner-border text-success"></div></div>';
+            const modal = new bootstrap.Modal($('studentModal'));
+            modal.show();
+            try {
+                const [attRes, resultRes] = await Promise.all([
+                    fetch(`/api/attendance/student/${student.id}/stats`),
+                    fetch(`/api/results/${student.id}`)
+                ]);
+                const att = await attRes.json();
+                const report = await resultRes.json();
+                const subjects = report.subjects || {};
+                const subjectKeys = Object.keys(subjects);
+                let subjHtml = '';
+                if (subjectKeys.length === 0) subjHtml = '<p class="text-muted text-center mb-0">No results posted.</p>';
+                else subjHtml = subjectKeys.map(sk => {
+                    const sd = subjects[sk];
+                    const total = sd.total || 0;
+                    const maxT = sd.maxTotal || 100;
+                    return `<div class="d-flex justify-content-between align-items-center py-1"><span class="fw-bold" style="font-size:0.85rem;">${sk}</span><span class="fw-bold">${total}/${maxT}</span></div>`;
+                }).join('');
+                body.innerHTML = `
+                    <div class="row g-3 mb-3">
+                        <div class="col-4 text-center"><small class="text-muted">Attendance</small><div class="fw-bold fs-5">${att.percentage||0}%</div></div>
+                        <div class="col-4 text-center"><small class="text-muted">Present</small><div class="fw-bold fs-5">${att.presentCount||0}</div></div>
+                        <div class="col-4 text-center"><small class="text-muted">Total Days</small><div class="fw-bold fs-5">${att.totalDays||0}</div></div>
+                    </div>
+                    <h6 class="fw-bold mb-2">Results</h6>
+                    ${subjHtml}
+                    <div class="mt-3"><small class="text-muted">ID: ELP${String(250000+student.id).slice(-6)} · Grade: ${student.grade||'N/A'}</small></div>
+                `;
+            } catch(e) {
+                body.innerHTML = '<p class="text-danger">Error loading student data.</p>';
+            }
+        }
+
+        // === ATTENDANCE ===
+        $('load-attendance-btn').addEventListener('click', loadAttendance);
+        $('class-select').addEventListener('change', () => { if ($('class-select').value) loadAttendance(); });
+        $('attendance-date').addEventListener('change', loadAttendance);
+
+        async function loadAttendance() {
+            const classId = $('class-select').value, date = $('attendance-date').value;
+            if (!classId||!date) return;
+            try {
+                const res = await fetch(`/api/attendance/class/${classId}/${date}`);
+                const students = await res.json();
+                $('attendance-stats-row').classList.remove('d-none');
+                $('attendance-card').classList.remove('d-none');
+                $('save-attendance-btn').disabled = false;
+                const tbody = $('attendance-table-body');
+                currentAttendance = {};
+                let pc=0,ac=0,lc=0;
+                tbody.innerHTML = students.map(s => {
+                    const st = s.status||'Absent';
+                    currentAttendance[s.id]=st;
+                    if(st==='Present')pc++;else if(st==='Absent')ac++;else if(st==='On-Leave')lc++;
+                    return `<tr data-student="${s.id}"><td>ELP${String(250000+s.id).slice(-6)}</td><td>${s.name}</td>
+                        <td><div class="d-flex gap-1 flex-wrap">
+                            <input type="radio" class="btn-check" name="att-${s.id}" id="p-${s.id}" value="Present" autocomplete="off" ${st==='Present'?'checked':''}>
+                            <label class="btn btn-outline-success btn-sm" for="p-${s.id}"><i class="fas fa-check"></i> P</label>
+                            <input type="radio" class="btn-check" name="att-${s.id}" id="a-${s.id}" value="Absent" autocomplete="off" ${st==='Absent'?'checked':''}>
+                            <label class="btn btn-outline-danger btn-sm" for="a-${s.id}"><i class="fas fa-times"></i> A</label>
+                            <input type="radio" class="btn-check" name="att-${s.id}" id="l-${s.id}" value="On-Leave" autocomplete="off" ${st==='On-Leave'?'checked':''}>
+                            <label class="btn btn-outline-warning btn-sm" for="l-${s.id}"><i class="fas fa-hourglass-half"></i> L</label>
+                        </div></td></tr>`;
+                }).join('');
+                updateAttStats(students.length,pc,ac,lc);
+            } catch(e) { $('attendance-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+        }
+
+        $('attendance-table-body').addEventListener('change', e => {
+            if (e.target.classList.contains('btn-check')) {
+                const row = e.target.closest('tr'), sid = row.dataset.student;
+                currentAttendance[sid] = e.target.value;
+                const v = Object.values(currentAttendance);
+                updateAttStats(v.length, v.filter(x=>x==='Present').length, v.filter(x=>x==='Absent').length, v.filter(x=>x==='On-Leave').length);
+            }
         });
 
-        try {
-            const response = await fetch(`/api/teachers/dashboard-details?email=${activeUser.email}`);
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.error || 'Failed to load dashboard data.');
-            }
-            const data = await response.json();
+        function updateAttStats(t,p,a,l) { $('att-total').textContent=t; $('att-present').textContent=p; $('att-absent').textContent=a; $('att-leave').textContent=l; }
 
-            document.getElementById('teacher-name').textContent = `Welcome, ${data.name}!`;
-            document.getElementById('teacher-subject').textContent = `Subject Expert: ${data.subject || 'Not Set'}`;
-            document.getElementById('total-students').textContent = data.totalStudents;
-            document.getElementById('class-count').textContent = data.classes.length;
+        $('save-attendance-btn').addEventListener('click', async () => {
+            const classId = $('class-select').value, date = $('attendance-date').value;
+            if (!classId||!date) return;
+            const records = [];
+            $$('#attendance-table-body tr').forEach(row => {
+                const sid = row.dataset.student;
+                if (!sid) return;
+                const checked = row.querySelector('.btn-check:checked');
+                records.push({student_id:parseInt(sid),status:checked?checked.value:'Absent'});
+            });
+            try {
+                const res = await fetch('/api/attendance',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({date,records})});
+                if (!res.ok) throw new Error('Failed');
+                await fetch('/api/attendance/recalculate-overall',{method:'PUT'});
+                $('attendance-alert').innerHTML = `<div class="alert alert-success alert-dismissible fade show">Saved!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+            } catch(e) { $('attendance-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+        });
 
-            const classTbody = document.getElementById('class-list-body');
-            if (data.classes.length === 0) {
-                classTbody.innerHTML = `<tr><td colspan="3" class="text-center text-muted">You are not currently assigned to any classes.</td></tr>`;
-            } else {
-                classTbody.innerHTML = data.classes.map(c => `
-                    <tr>
-                        <td>${c.name}</td>
-                        <td>${c.room}</td>
-                        <td>${c.students}</td>
-                    </tr>
-                `).join('');
-            }
-        } catch (error) {
-            document.body.innerHTML = `<div class="container mt-5"><div class="alert alert-danger">Error: ${error.message} Please try logging in again.</div></div>`;
+        // === RESULTS ===
+        $('load-results-students-btn').addEventListener('click', loadResultsStudents);
+        $('results-class-select').addEventListener('change', () => { if ($('results-class-select').value) loadResultsStudents(); });
+
+        async function loadResultsStudents() {
+            const classId = $('results-class-select').value;
+            if (!classId) return;
+            try {
+                const res = await fetch(`/api/classes/${classId}/students`);
+                const students = await res.json();
+                $('results-entry-card').classList.remove('d-none');
+                const tbody = $('results-table-body');
+                currentResultsStudents = {};
+                tbody.innerHTML = students.map(s => {
+                    currentResultsStudents[s.id] = {name:s.name,quiz1:0,quiz2:0,sem1:0,sem2:0,midterm:0,final:0};
+                    return `<tr data-student="${s.id}"><td><strong>ELP${String(250000+s.id).slice(-6)}</strong><br><small>${s.name}</small></td>
+                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="quiz1" style="width:58px;"></td>
+                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="quiz2" style="width:58px;"></td>
+                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="sem1" style="width:58px;"></td>
+                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="sem2" style="width:58px;"></td>
+                        <td><input type="number" min="0" max="40" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="midterm" style="width:65px;"></td>
+                        <td><input type="number" min="0" max="40" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="final" style="width:65px;"></td>
+                        <td class="fw-bold stot" data-sid="${s.id}" style="color:var(--primary-dark);">0</td>
+                    </tr>`;
+                }).join('');
+                $$('.si').forEach(inp => inp.addEventListener('change', e => {
+                    const sid = e.target.dataset.sid, type = e.target.dataset.type, max = EXAM_TYPES[type].max;
+                    let v = parseInt(e.target.value)||0; if(v>max){v=max;e.target.value=v;}
+                    currentResultsStudents[sid][type]=v;
+                    const d=currentResultsStudents[sid], tot=d.quiz1+d.quiz2+d.sem1+d.sem2+d.midterm+d.final;
+                    $$(`.stot[data-sid="${sid}"]`).forEach(el => {el.textContent=tot; el.className='fw-bold stot '+(tot>=60?'text-success':tot>=40?'text-warning':'text-danger');});
+                }));
+            } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+        }
+
+        $('submit-results-btn').addEventListener('click', async () => {
+            const subject = $('results-subject').value.trim();
+            if (!subject) { $('results-alert').innerHTML = '<div class="alert alert-warning">Enter a subject.</div>'; return; }
+            const records = Object.entries(currentResultsStudents).map(([id,d]) => ({studentId:parseInt(id),subject,examScores:[
+                {examType:'quiz1',score:d.quiz1},{examType:'quiz2',score:d.quiz2},{examType:'sem1',score:d.sem1},
+                {examType:'sem2',score:d.sem2},{examType:'midterm',score:d.midterm},{examType:'final',score:d.final}]}));
+            if (records.length===0) { $('results-alert').innerHTML = '<div class="alert alert-warning">No students.</div>'; return; }
+            try {
+                for (const rec of records) {
+                    const r = await fetch('/api/results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...rec,teacherId:activeUser.id,teacherName:activeUser.name})});
+                    if (!r.ok) { const e=await r.json(); throw new Error(e.error||'Failed'); }
+                }
+                $('results-alert').innerHTML = '<div class="alert alert-success alert-dismissible fade show">Submitted!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+                loadSubmittedResults();
+                $('results-subject').value = '';
+                $$('.si').forEach(i=>i.value=0);
+                $$('.stot').forEach(el=>el.textContent='0');
+                Object.keys(currentResultsStudents).forEach(id => {currentResultsStudents[id]={...currentResultsStudents[id],quiz1:0,quiz2:0,sem1:0,sem2:0,midterm:0,final:0};});
+            } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+        });
+
+        async function loadSubmittedResults() {
+            try {
+                const res = await fetch(`/api/results/teacher/${activeUser.id}`);
+                const results = await res.json();
+                const el = $('submitted-results-list');
+                if (results.length===0) { el.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:0.85rem;">No results submitted.</div>'; return; }
+                const badge = {'pending':'bg-warning text-dark','approved':'bg-success','rejected':'bg-danger'};
+                const grouped = {};
+                results.forEach(r => { const k=r.student_id+'-'+r.subject; if(!grouped[k]) grouped[k]={name:r.studentName,subject:r.subject,status:r.approval_status,scores:{}}; grouped[k].scores[r.exam_type]=parseFloat(r.score); });
+                el.innerHTML = Object.values(grouped).map(g => {
+                    const q=(g.scores.quiz1||0)+(g.scores.quiz2||0), se=(g.scores.sem1||0)+(g.scores.sem2||0), m=g.scores.midterm||0, f=g.scores.final||0;
+                    return `<div class="p-2 border-bottom" style="font-size:0.8rem;"><div class="fw-bold">${g.name}</div><div class="d-flex justify-content-between"><span>${g.subject} · ${q+se+m+f}/100</span><span class="badge ${badge[g.status]||'bg-secondary'}">${g.status}</span></div></div>`;
+                }).join('');
+            } catch(e) { console.error(e); }
+        }
+        loadSubmittedResults();
+
+        // === TIMETABLE TAB ===
+        $('tt-class-select').addEventListener('change', function() {
+            if (this.value) renderTimetable(this.value, 'timetable-full');
+        });
+        if (teacherClasses.length > 0) {
+            $('tt-class-select').value = teacherClasses[0].id;
+            renderTimetable(teacherClasses[0].id, 'timetable-full');
+        }
+
+        // === EXAM SCHEDULE TAB ===
+        if (teacherClasses.length > 0) {
+            loadExamSchedule(teacherClasses[0].id, 'exam-schedule-full');
+        }
+
+        // === TREND CHART ===
+        $('trend-class-select').addEventListener('change', function() { if (this.value) loadTrendChart(this.value); });
+
+        async function loadTrendChart(classId) {
+            try {
+                const res = await fetch(`/api/classes/${classId}/students`);
+                const students = await res.json();
+                if (students.length === 0) { if (trendChart) trendChart.destroy(); return; }
+                // Get monthly stats for first student (or aggregate)
+                const firstRes = await fetch(`/api/attendance/student/${students[0].id}/monthly`);
+                const monthly = await firstRes.json();
+                if (!monthly||monthly.length===0) { if (trendChart) trendChart.destroy(); return; }
+                const labels = monthly.map(m => m.month);
+                const pcts = monthly.map(m => parseFloat(m.percentage)||0);
+                const ctx = $('trendChart').getContext('2d');
+                if (trendChart) trendChart.destroy();
+                trendChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels, datasets: [{ label: 'Attendance %', data: pcts, borderColor: '#1dd91d', backgroundColor: 'rgba(29,217,29,0.1)', fill: true, tension: 0.3, pointBackgroundColor: '#0f510e' }] },
+                    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { min: 0, max: 100, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } } }
+                });
+            } catch(e) { /* ignore */ }
         }
     });
-</script>
+
+    function toggleTheme() {
+        const body = document.body, next = body.getAttribute('data-theme')==='dark'?'light':'dark';
+        body.setAttribute('data-theme',next); localStorage.setItem('elif-theme',next);
+        document.getElementById('themeIcon').className = next==='dark'?'fas fa-sun':'fas fa-moon';
+    }
+    (function() { const s=localStorage.getItem('elif-theme')||'light'; document.body.setAttribute('data-theme',s); document.getElementById('themeIcon').className=s==='dark'?'fas fa-sun':'fas fa-moon'; })();
+    </script>
 </body>
 </html>

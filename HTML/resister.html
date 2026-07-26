@@ -35,12 +35,12 @@
         }
 
         .login-header {
-            color: #1a2853;
+            color: #0f510e;
         }
 
         .btn-primary {
-            background-color: #1a2853;
-            border-color: #1a2853;
+            background-color: #0f510e;
+            border-color: #0f510e;
         }
     </style>
 </head>
@@ -159,8 +159,8 @@ document.addEventListener('DOMContentLoaded', () => {
                         throw new Error('Registration failed. Please try again.');
                     }
 
-                    registerAlert.innerHTML = `<div class="alert alert-success">Registration successful! Redirecting to login...</div>`;
-                    setTimeout(() => { window.location.href = 'admin-login.html'; }, 2000);
+                    registerAlert.innerHTML = `<div class="alert alert-success">Registration successful! Please check your email to verify your account before logging in.</div>`;
+                    setTimeout(() => { window.location.href = 'portal_login.html'; }, 3000);
 
                 } catch (error) {
                     registerAlert.innerHTML = `<div class="alert alert-danger">${error.message}</div>`;
