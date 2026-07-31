@@ -1,4 +1,4 @@
-const CACHE = 'elif-pwa-v1';
+const CACHE = 'elif-pwa-v2';
 const PRECACHE = [
   '/',
   '/HTML/index.html',
@@ -6,8 +6,8 @@ const PRECACHE = [
   '/HTML/portal_login.html',
   '/HTML/student-library.html',
   '/css/style.css',
-  '/js/mai.js',
-  '/js/pwa.js',
+  '/JS/mai.js',
+  '/JS/pwa.js',
   '/manifest.json',
   '/images/ALIF.png',
   '/images/icons/icon-192.png',
