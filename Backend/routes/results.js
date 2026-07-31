@@ -2,16 +2,12 @@
 
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const { parse } = require('csv-parse/sync');
 const { stringify } = require('csv-stringify/sync');
 const { query } = require('../database.js');
 const router = express.Router();
 
-const CSV_UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'csv');
-fs.mkdirSync(CSV_UPLOAD_DIR, { recursive: true });
-const upload = multer({ dest: CSV_UPLOAD_DIR });
+const upload = multer({ storage: multer.memoryStorage() });
 
 // Exam type definitions with max scores
 const EXAM_TYPES = {
@@ -300,8 +296,7 @@ router.get('/template/download', (req, res) => {
 router.post('/upload-csv', upload.single('file'), async (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'CSV file is required.' });
     try {
-        const content = fs.readFileSync(req.file.path, 'utf-8');
-        fs.unlinkSync(req.file.path);
+        const content = req.file.buffer.toString('utf-8');
         const records = parse(content, { columns: true, skip_empty_lines: true, relax_column_count: true });
 
         let imported = 0, errors = [];

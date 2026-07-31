@@ -1,5 +1,6 @@
 # Node.js dependencies
 /Backend/node_modules
+/node_modules
 
 # SQLite Database File
 /Backend/school.db

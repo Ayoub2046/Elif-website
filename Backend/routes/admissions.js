@@ -2,22 +2,11 @@
 
 const express = require('express');
 const multer = require('multer');
-const path = require('path');
-const fs = require('fs');
 const { query } = require('../database.js');
+const { uploadBuffer } = require('../services/storage');
 const router = express.Router();
 
-const UPLOAD_DIRECTORY = path.join(__dirname, '..', '..', 'uploads', 'applications');
-fs.mkdirSync(UPLOAD_DIRECTORY, { recursive: true });
-
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, UPLOAD_DIRECTORY),
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, uniqueSuffix + path.extname(file.originalname));
-    }
-});
-const upload = multer({ storage });
+const upload = multer({ storage: multer.memoryStorage() });
 
 // GET all applications
 router.get('/', async (req, res) => {
@@ -32,7 +21,14 @@ router.get('/', async (req, res) => {
 // POST a new application
 router.post('/', upload.single('applicationLetter'), async (req, res) => {
     const { name, birthDate, gradeToEnroll, previousSchool, parentName, parentEmail, parentPhone } = req.body;
-    const applicationLetterPath = req.file ? `uploads/applications/${req.file.filename}` : null;
+    let applicationLetterPath = null;
+    if (req.file) {
+        try {
+            applicationLetterPath = await uploadBuffer(req.file.buffer, 'applications', req.file.originalname, req.file.mimetype);
+        } catch (e) {
+            return res.status(500).json({ error: 'Failed to upload application letter: ' + e.message });
+        }
+    }
     const submissionDate = new Date().toISOString().split('T')[0];
     try {
         await query(
