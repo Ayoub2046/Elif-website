@@ -49,12 +49,18 @@
             </nav>
             <div class="content-area">
                 <div class="card main-table-card">
-                    <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
                         <h6 class="m-0">All Students</h6>
-                        <button class="btn btn-primary btn-sm" id="btn-add-student"><i class="fas fa-plus me-1"></i> Add
-                            New Student</button>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a id="download-students-template" class="btn btn-success btn-sm" href="/api/students/template/download" target="_blank"><i class="fas fa-download me-1"></i>Download Template</a>
+                            <button id="upload-students-csv-trigger" class="btn btn-warning btn-sm"><i class="fas fa-upload me-1"></i>Import CSV</button>
+                            <input type="file" id="upload-students-csv-input" accept=".csv" style="display:none;">
+                            <button class="btn btn-primary btn-sm" id="btn-add-student"><i class="fas fa-plus me-1"></i> Add New Student</button>
+                            <button class="btn btn-outline-danger btn-sm" id="btn-delete-all-students"><i class="fas fa-trash-alt me-1"></i>Delete All</button>
+                        </div>
                     </div>
                     <div class="card-body">
+                        <div id="csv-toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;"></div>
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
@@ -257,6 +263,56 @@
 
             fetchStudents();
             loadParents();
+
+            // CSV Upload trigger
+            document.getElementById('upload-students-csv-trigger').addEventListener('click', (e) => {
+                e.preventDefault();
+                document.getElementById('upload-students-csv-input').click();
+            });
+
+            function showCsvToast(message, type) {
+                const container = document.getElementById('csv-toast-container');
+                const id = 'toast-' + Date.now();
+                container.innerHTML = `<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true"><div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+                const toast = new bootstrap.Toast(document.getElementById(id), { delay: 6000 });
+                toast.show();
+            }
+
+            document.getElementById('upload-students-csv-input').addEventListener('change', async (e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('file', file);
+                const btn = document.getElementById('upload-students-csv-trigger');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Importing...';
+                try {
+                    const res = await fetch('/api/students/upload-csv', { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    let msg = data.message;
+                    if (data.errors && data.errors.length > 0) msg += '<br><small class="opacity-75">' + data.errors.slice(0,3).join('<br>') + (data.errors.length > 3 ? '<br>...and ' + (data.errors.length-3) + ' more' : '') + '</small>';
+                    showCsvToast(msg, data.errors && data.errors.length > 0 ? 'warning' : 'success');
+                    fetchStudents();
+                } catch (err) {
+                    showCsvToast('Error: ' + err.message, 'danger');
+                }
+                btn.innerHTML = '<i class="fas fa-upload me-2"></i>Import CSV';
+                e.target.value = '';
+            });
+
+            // Delete All Students
+            document.getElementById('btn-delete-all-students').addEventListener('click', async () => {
+                if (!confirm('Move ALL students to the Recycle Bin? You can restore them later from the Recycle Bin.')) return;
+                try {
+                    const res = await fetch('/api/trash/soft-delete-all/students', { method: 'POST' });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    showCsvToast(data.message, 'success');
+                    fetchStudents();
+                } catch (err) {
+                    showCsvToast('Error: ' + err.message, 'danger');
+                }
+            });
         });
 
 

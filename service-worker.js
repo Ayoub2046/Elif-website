@@ -32,6 +32,10 @@ self.addEventListener('fetch', (e) => {
 
   // API calls — network first, fallback to cache
   if (url.pathname.startsWith('/api/')) {
+    if (request.method !== 'GET') {
+      e.respondWith(fetch(request));
+      return;
+    }
     e.respondWith(
       fetch(request)
         .then((res) => {
@@ -45,6 +49,10 @@ self.addEventListener('fetch', (e) => {
   }
 
   // Static assets / pages — cache first, network fallback
+  if (request.method !== 'GET') {
+    e.respondWith(fetch(request));
+    return;
+  }
   e.respondWith(
     caches.match(request).then((cached) => cached || fetch(request))
   );

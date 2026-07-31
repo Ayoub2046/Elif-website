@@ -8,6 +8,12 @@
 # Uploaded files from users
 /uploads/
 
+# Environment variables
+.env
+
+# Vercel output
+.vercel
+
 # IDE settings
 .vscode/
 

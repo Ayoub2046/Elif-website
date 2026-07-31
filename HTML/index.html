@@ -294,9 +294,39 @@
                 // Update Hero Section
                 if (savedContent.heroTitle) document.getElementById('hero-title-display').textContent = savedContent.heroTitle;
                 if (savedContent.heroSubtitle) document.getElementById('hero-subtitle-display').textContent = savedContent.heroSubtitle;
-                if (savedContent.heroBg) {
-                    document.getElementById('hero-section').style.backgroundImage = `linear-gradient(rgba(15, 81, 14, 0.6), rgba(15, 81, 14, 0.6)), url('${savedContent.heroBg}')`;
+                const heroSection = document.getElementById('hero-section');
+                function setHeroBg(url) {
+                    if (!url) return;
+                    const img = new Image();
+                    img.onload = () => {
+                        heroSection.style.backgroundImage = `url('${url}')`;
+                        heroSection.style.backgroundSize = 'cover';
+                        heroSection.style.backgroundPosition = 'center center';
+                        heroSection.style.backgroundRepeat = 'no-repeat';
+                    };
+                    img.onerror = () => {
+                        const idx = validGallery.indexOf(url);
+                        if (idx > -1) validGallery.splice(idx, 1);
+                    };
+                    img.src = url;
                 }
+                let validGallery = [];
+                try {
+                    const raw = JSON.parse(savedContent.heroGallery || '[]');
+                    validGallery = raw.filter(u => u && u.trim());
+                    if (validGallery.length > 0) {
+                        let bgIndex = 0;
+                        setHeroBg(validGallery[0]);
+                        heroSection.style.transition = 'background 1.2s ease';
+                        setInterval(() => {
+                            if (validGallery.length === 0) return;
+                            bgIndex = (bgIndex + 1) % validGallery.length;
+                            setHeroBg(validGallery[bgIndex]);
+                        }, 5000);
+                    } else if (savedContent.heroBg) {
+                        setHeroBg(savedContent.heroBg);
+                    }
+                } catch {}
                 // Update "Why Choose Us" Section
                 if (savedContent.feature1Title) document.getElementById('feature1-title-display').textContent = savedContent.feature1Title;
                 if (savedContent.feature1Text) document.getElementById('feature1-text-display').textContent = savedContent.feature1Text;

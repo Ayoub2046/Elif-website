@@ -107,11 +107,70 @@
         .act-content .act-meta { font-size: 0.7rem; color: var(--text-secondary, #888); margin-top: 1px; }
 
         /* === STUDENT DIRECTORY === */
-        .student-chip { display: inline-flex; align-items: center; gap: 6px; background: var(--primary-lightest, #e8f8e8); border-radius: 20px; padding: 0.25rem 0.7rem 0.25rem 0.25rem; font-size: 0.78rem; font-weight: 500; color: var(--primary-dark, #0f510e); cursor: pointer; transition: all 0.15s; margin: 3px; }
-        .student-chip:hover { background: var(--primary-dark, #0f510e); color: #fff; }
-        .student-chip .sc-avatar { width: 24px; height: 24px; border-radius: 50%; background: var(--primary, #1dd91d); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 0.6rem; font-weight: 700; flex-shrink: 0; }
-        body[data-theme="dark"] .student-chip { background: rgba(29,217,29,0.08); color: #1dd91d; }
-        body[data-theme="dark"] .student-chip:hover { background: #1dd91d; color: #1a1d1a; }
+        .dir-item {
+            display: flex; align-items: center; gap: 14px;
+            padding: .8rem 1rem;
+            border-bottom: 1px solid var(--border-color,#e9ecef);
+            cursor: pointer; transition: all .2s ease;
+            position: relative;
+        }
+        .dir-item:last-child { border-bottom: none; }
+        .dir-item::after {
+            content: ''; position: absolute; left: 1rem; right: 1rem; bottom: -1px;
+            height: 0; background: var(--primary,#0d6efd);
+            transition: height .2s ease;
+        }
+        .dir-item:hover {
+            background: rgba(13,110,253,.03);
+            padding-left: 1.25rem;
+        }
+        .dir-item:hover::after { height: 2px; }
+        body[data-theme="dark"] .dir-item:hover { background: rgba(255,255,255,.03); }
+
+        .dir-avatar {
+            width: 44px; height: 44px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; font-size: .9rem;
+            flex-shrink: 0;
+            box-shadow: 0 3px 10px rgba(0,0,0,.1);
+            transition: transform .2s, box-shadow .2s;
+        }
+        .dir-item:hover .dir-avatar {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,.15);
+        }
+
+        .dir-info { flex-grow: 1; min-width: 0; }
+        .dir-name-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+        .dir-name { font-weight: 600; font-size: .88rem; color: var(--text-primary,#212529); }
+        .dir-id { font-size: .68rem; color: var(--text-secondary,#6c757d); font-family: 'Courier New',monospace; background: rgba(108,117,125,.08); padding: 1px 7px; border-radius: 6px; }
+        .dir-grade { font-size: .65rem; background: linear-gradient(135deg,#0d6efd,#6610f2); color: #fff; padding: 2px 10px; border-radius: 12px; font-weight: 600; letter-spacing: .3px; }
+        .dir-meta { font-size: .72rem; color: var(--text-secondary,#6c757d); margin-top: 3px; display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+        .dir-meta i { width: 13px; font-size: .65rem; }
+        .dir-meta .meta-divider { color: var(--border-color,#dee2e6); margin: 0 2px; }
+
+        .dir-btn {
+            width: 32px; height: 32px; border-radius: 10px;
+            border: none; background: transparent;
+            color: var(--text-secondary,#adb5bd);
+            display: flex; align-items: center; justify-content: center;
+            transition: all .25s ease; flex-shrink: 0;
+            font-size: .8rem;
+        }
+        .dir-item:hover .dir-btn {
+            background: var(--primary,#0d6efd);
+            color: #fff;
+            transform: translateX(3px);
+        }
+
+        .dir-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: .62rem; font-weight: 600;
+            padding: 2px 8px; border-radius: 20px;
+        }
+        .dir-badge-att { background: rgba(25,135,84,.12); color: #198754; }
+        .dir-badge-att.low { background: rgba(220,53,69,.12); color: #dc3545; }
+        .dir-badge-att.medium { background: rgba(255,193,7,.15); color: #b8860b; }
 
         /* === EXAM PILLS === */
         .exam-pill { display: flex; align-items: center; gap: 8px; padding: 0.6rem 0; border-bottom: 1px solid var(--border-color, #f0f0f0); }
@@ -246,8 +305,14 @@
         <div class="td-section" id="section-students">
             <div class="td-card">
                 <div class="td-card-h">
-                    <h5><i class="fas fa-search"></i> Student Directory</h5>
-                    <div style="max-width:260px;width:100%;"><input type="text" class="form-control form-control-sm" id="student-search" placeholder="Search by name or ID..."></div>
+                    <h5><i class="fas fa-address-book"></i> Student Directory</h5>
+                    <div style="max-width:260px;width:100%;">
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text bg-transparent border-end-0"><i class="fas fa-search text-muted" style="font-size:.7rem;"></i></span>
+                            <input type="text" class="form-control border-start-0 ps-0" id="student-search" placeholder="Search name or ID...">
+                            <button class="btn btn-outline-secondary btn-sm" id="dir-search-clear" style="display:none;" title="Clear"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
                 </div>
                 <div class="td-card-b" id="student-directory"></div>
             </div>
@@ -259,11 +324,14 @@
                 <div class="col-lg-8">
                     <div class="td-card">
                         <div class="td-card-h"><h5><i class="fas fa-edit"></i> Enter Exam Scores</h5>
-                            <div class="d-flex gap-2 align-items-center">
+                            <div class="d-flex gap-2 align-items-center flex-wrap">
                                 <select id="results-class-select" class="form-select form-select-sm" style="width:auto;"><option value="">Class</option></select>
                                 <input type="text" id="results-subject" class="form-control form-control-sm" placeholder="Subject" style="width:130px;">
                                 <input type="date" id="results-date" class="form-control form-control-sm" style="width:140px;">
                                 <button id="load-results-students-btn" class="btn btn-primary btn-sm" disabled><i class="fas fa-sync"></i></button>
+                                <a id="download-results-template" class="btn btn-success btn-sm" href="/api/results/template/download" target="_blank"><i class="fas fa-download me-1"></i>Template</a>
+                                <button id="upload-results-csv-trigger" class="btn btn-warning btn-sm"><i class="fas fa-upload me-1"></i>Import CSV</button>
+                                <input type="file" id="upload-results-csv-input" accept=".csv" style="display:none;">
                             </div>
                         </div>
                         <div class="td-card-b d-none" id="results-entry-card">
@@ -476,23 +544,62 @@
         // === STUDENT DIRECTORY ===
         function renderStudentDirectory(students) {
             const el = $('student-directory');
-            if (students.length === 0) { el.innerHTML = '<div class="text-center text-muted py-3">No students assigned.</div>'; return; }
-            el.innerHTML = students.map(s => {
+            const header = el.closest('.td-card')?.querySelector('.td-card-h');
+            if (header) {
+                let countBadge = header.querySelector('.dir-count');
+                if (!countBadge) { countBadge = document.createElement('span'); countBadge.className = 'dir-count badge bg-primary rounded-pill ms-2'; header.querySelector('h5')?.appendChild(countBadge); }
+                countBadge.textContent = students.length;
+            }
+            if (students.length === 0) { el.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-user-graduate fa-2x mb-3 opacity-25"></i><br><small>No students assigned to your classes.</small></div>'; return; }
+            const gradients = ['linear-gradient(135deg,#0d6efd,#6610f2)','linear-gradient(135deg,#198754,#20c997)','linear-gradient(135deg,#dc3545,#e83e8c)','linear-gradient(135deg,#fd7e14,#ffc107)','linear-gradient(135deg,#6f42c1,#d63384)','linear-gradient(135deg,#0dcaf0,#0d6efd)'];
+            el.innerHTML = students.map((s, i) => {
                 const initials = (s.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-                return `<span class="student-chip" data-student='${JSON.stringify(s)}'><span class="sc-avatar">${initials}</span>${s.name}</span>`;
+                const bg = gradients[s.id % gradients.length];
+                const att = s.attendance;
+                const attBadge = att != null
+                    ? `<span class="dir-badge ${att < 50 ? 'dir-badge-att low' : att < 75 ? 'dir-badge-att medium' : 'dir-badge-att'}"><i class="fas fa-${att < 50 ? 'times-circle' : att < 75 ? 'exclamation-circle' : 'check-circle'}"></i>${Number(att).toFixed(0)}%</span>`
+                    : '';
+                return `<div class="dir-item" data-student='${JSON.stringify(s)}'>
+                    <div class="dir-avatar" style="background:${bg};">${initials}</div>
+                    <div class="dir-info">
+                        <div class="dir-name-row">
+                            <span class="dir-name">${s.name}</span>
+                            <span class="dir-id">ELP${String(250000+s.id).slice(-6)}</span>
+                            <span class="dir-grade">${s.grade || '-'}</span>
+                            ${attBadge}
+                        </div>
+                        <div class="dir-meta">
+                            ${s.class_name ? '<i class="fas fa-book-open"></i> '+s.class_name : ''}
+                            ${s.class_name && s.parent_name ? '<span class="meta-divider">|</span>' : ''}
+                            ${s.parent_name ? '<i class="fas fa-user-friends"></i> '+s.parent_name : ''}
+                        </div>
+                    </div>
+                    <button class="dir-btn" title="View Profile"><i class="fas fa-chevron-right"></i></button>
+                </div>`;
             }).join('');
-            el.querySelectorAll('.student-chip').forEach(chip => chip.addEventListener('click', function() {
+            el.querySelectorAll('.dir-item').forEach(item => item.addEventListener('click', function() {
                 const s = JSON.parse(this.dataset.student);
                 openStudentModal(s);
             }));
-            // Search
-            $('student-search').addEventListener('input', function() {
-                const q = this.value.toLowerCase();
-                el.querySelectorAll('.student-chip').forEach(chip => {
-                    const name = chip.textContent.toLowerCase();
-                    chip.style.display = name.includes(q) ? 'inline-flex' : 'none';
+            const searchInput = $('student-search');
+            const clearBtn = document.getElementById('dir-search-clear');
+            searchInput.addEventListener('input', function() {
+                const q = this.value.toLowerCase().trim();
+                if (clearBtn) clearBtn.style.display = q ? '' : 'none';
+                el.querySelectorAll('.dir-item').forEach(item => {
+                    const name = item.querySelector('.dir-name').textContent.toLowerCase();
+                    const id = item.querySelector('.dir-id').textContent.toLowerCase();
+                    item.style.display = !q || name.includes(q) || id.includes(q) ? '' : 'none';
                 });
             });
+            if (clearBtn) {
+                clearBtn.addEventListener('click', () => {
+                    searchInput.value = '';
+                    clearBtn.style.display = 'none';
+                    el.querySelectorAll('.dir-item').forEach(item => item.style.display = '');
+                    searchInput.focus();
+                });
+            }
         }
 
         // === STUDENT MODAL ===
@@ -652,6 +759,34 @@
                 $$('.stot').forEach(el=>el.textContent='0');
                 Object.keys(currentResultsStudents).forEach(id => {currentResultsStudents[id]={...currentResultsStudents[id],quiz1:0,quiz2:0,sem1:0,sem2:0,midterm:0,final:0};});
             } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+        });
+
+        // CSV Upload trigger
+        $('upload-results-csv-trigger').addEventListener('click', (e) => {
+            e.preventDefault();
+            $('upload-results-csv-input').click();
+        });
+
+        $('upload-results-csv-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            $('results-alert').innerHTML = '<div class="alert alert-info">Uploading...</div>';
+            try {
+                const res = await fetch('/api/results/upload-csv', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                let html = `<div class="alert alert-success">${data.message}</div>`;
+                if (data.errors && data.errors.length > 0) {
+                    html += `<div class="alert alert-warning" style="max-height:150px;overflow-y:auto;font-size:0.8rem;">${data.errors.map(e => '<div>'+e+'</div>').join('')}</div>`;
+                }
+                $('results-alert').innerHTML = html;
+                loadSubmittedResults();
+            } catch(err) {
+                $('results-alert').innerHTML = `<div class="alert alert-danger">${err.message}</div>`;
+            }
+            e.target.value = '';
         });
 
         async function loadSubmittedResults() {

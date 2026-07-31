@@ -86,13 +86,66 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE / revoke clearance
+// DELETE / revoke clearance (soft-delete)
 router.delete('/:id', async (req, res) => {
     try {
-        await query(`DELETE FROM clearance_cards WHERE id = $1`, [req.params.id]);
+        await query(`UPDATE clearance_cards SET deleted_at = NOW() WHERE id = $1`, [req.params.id]);
         res.json({ message: 'Clearance revoked.' });
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+
+// POST /sync — auto-sync clearance for all students based on fee status
+router.post('/sync', async (req, res) => {
+    try {
+        const { rows: students } = await query(`SELECT id FROM students WHERE deleted_at IS NULL`);
+        let cleared = 0, revoked = 0;
+        for (const s of students) {
+            const { rows } = await query(
+                `SELECT COUNT(*) FILTER (WHERE status = 'Paid') AS paid,
+                        COUNT(*) FILTER (WHERE status IN ('Pending','Overdue')) AS unpaid
+                 FROM fees WHERE studentid = $1 AND deleted_at IS NULL`,
+                [s.id]
+            );
+            const { paid, unpaid } = rows[0];
+            const shouldClear = parseInt(paid) > 0 && parseInt(unpaid) === 0;
+
+            const existing = await query(
+                `SELECT id FROM clearance_cards WHERE student_id = $1 AND deleted_at IS NULL`,
+                [s.id]
+            );
+
+            if (shouldClear) {
+                if (existing.rows.length === 0) {
+                    await query(
+                        `INSERT INTO clearance_cards (student_id, is_cleared, released_by, released_at, semester)
+                         VALUES ($1, true, 'Auto Sync', NOW(), 'Current Semester')`,
+                        [s.id]
+                    );
+                    cleared++;
+                } else {
+                    const r2 = await query(
+                        `UPDATE clearance_cards SET is_cleared = true, released_at = NOW(), released_by = 'Auto Sync'
+                         WHERE student_id = $1 AND deleted_at IS NULL AND is_cleared = false
+                         RETURNING id`,
+                        [s.id]
+                    );
+                    if (r2.rowCount > 0) cleared++;
+                }
+            } else {
+                const r2 = await query(
+                    `UPDATE clearance_cards SET is_cleared = false
+                     WHERE student_id = $1 AND deleted_at IS NULL AND is_cleared = true
+                     RETURNING id`,
+                    [s.id]
+                );
+                if (r2.rowCount > 0) revoked++;
+            }
+        }
+        res.json({ message: `Synced: ${cleared} cleared, ${revoked} revoked.` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

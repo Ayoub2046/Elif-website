@@ -42,10 +42,10 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE a book
+// DELETE a book (soft-delete)
 router.delete('/:id', async (req, res) => {
     try {
-        await query(`DELETE FROM books WHERE id = $1`, [req.params.id]);
+        await query(`UPDATE books SET deleted_at = NOW() WHERE id = $1`, [req.params.id]);
         res.json({ message: 'deleted' });
     } catch (err) {
         res.status(400).json({ error: err.message });

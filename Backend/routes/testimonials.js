@@ -14,6 +14,17 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET a single testimonial by ID
+router.get('/:id', async (req, res) => {
+    try {
+        const { rows } = await query(`SELECT * FROM testimonials WHERE id = $1`, [req.params.id]);
+        if (!rows[0]) return res.status(404).json({ error: 'Testimonial not found' });
+        res.json(rows[0]);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // POST a new testimonial
 router.post('/', async (req, res) => {
     const { quote, author, relation } = req.body;
@@ -23,6 +34,20 @@ router.post('/', async (req, res) => {
             [quote, author, relation]
         );
         res.status(201).json({ id: rows[0].id });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
+// PUT update a testimonial
+router.put('/:id', async (req, res) => {
+    const { quote, author, relation } = req.body;
+    try {
+        await query(
+            `UPDATE testimonials SET quote = $1, author = $2, relation = $3 WHERE id = $4`,
+            [quote, author, relation, req.params.id]
+        );
+        res.json({ message: 'updated' });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }

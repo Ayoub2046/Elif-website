@@ -1,8 +1,17 @@
 // Backend/routes/results.js
 
 const express = require('express');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
+const { parse } = require('csv-parse/sync');
+const { stringify } = require('csv-stringify/sync');
 const { query } = require('../database.js');
 const router = express.Router();
+
+const CSV_UPLOAD_DIR = path.join(__dirname, '..', '..', 'uploads', 'csv');
+fs.mkdirSync(CSV_UPLOAD_DIR, { recursive: true });
+const upload = multer({ dest: CSV_UPLOAD_DIR });
 
 // Exam type definitions with max scores
 const EXAM_TYPES = {
@@ -240,10 +249,10 @@ router.put('/release', async (req, res) => {
     }
 });
 
-// DELETE a result
+// DELETE a result (soft-delete)
 router.delete('/:id', async (req, res) => {
     try {
-        await query(`DELETE FROM results WHERE id = $1`, [req.params.id]);
+        await query(`UPDATE results SET deleted_at = NOW() WHERE id = $1`, [req.params.id]);
         res.json({ message: 'deleted' });
     } catch (err) {
         res.status(400).json({ error: err.message });
@@ -274,5 +283,71 @@ async function updateStudentGPA(studentId) {
         await query(`UPDATE students SET gpa = $1 WHERE id = $2`, [gpa, studentId]);
     } catch (e) { }
 }
+
+// --- CSV Template Download ---
+router.get('/template/download', (req, res) => {
+    const csv = stringify([
+        ['StudentID', 'Subject', 'Q1', 'Q2', 'S1', 'S2', 'Midterm', 'Final'],
+        ['ELP250001', 'Mathematics', '4', '5', '4', '5', '35', '38'],
+        ['ELP250002', 'Mathematics', '3', '4', '3', '4', '30', '32']
+    ]);
+    res.setHeader('Content-Type', 'text/csv');
+    res.setHeader('Content-Disposition', 'attachment; filename="results-template.csv"');
+    res.send(csv);
+});
+
+// --- CSV Upload for Bulk Results ---
+router.post('/upload-csv', upload.single('file'), async (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'CSV file is required.' });
+    try {
+        const content = fs.readFileSync(req.file.path, 'utf-8');
+        fs.unlinkSync(req.file.path);
+        const records = parse(content, { columns: true, skip_empty_lines: true, relax_column_count: true });
+
+        let imported = 0, errors = [];
+        for (let i = 0; i < records.length; i++) {
+            const row = records[i];
+            const rk = Object.keys(row).reduce((acc, k) => { acc[k.toLowerCase().replace(/\(.*\)/g,'').trim()] = row[k]; return acc; }, {});
+
+            const studentIdRaw = (rk['studentid'] || '').toString().replace('ELP', '').trim();
+            const studentId = parseInt(studentIdRaw) - 250000;
+            const subject = (rk['subject'] || '').trim();
+            if (!studentId || !subject) { errors.push(`Row ${i+2}: Invalid StudentID or Subject`); continue; }
+
+            const examMap = {
+                'q1': 'quiz1', 'q2': 'quiz2', 's1': 'sem1', 's2': 'sem2',
+                'midterm': 'midterm', 'final': 'final'
+            };
+            const scores = [];
+            for (const [col, type] of Object.entries(examMap)) {
+                const val = parseFloat(rk[col]);
+                const maxScore = EXAM_TYPES[type]?.maxScore || 100;
+                if (!isNaN(val)) scores.push({ examType: type, score: Math.min(val, maxScore) });
+            }
+            if (scores.length === 0) { errors.push(`Row ${i+2}: No valid scores for ${subject}`); continue; }
+
+            try {
+                await query(
+                    `DELETE FROM results WHERE student_id = $1 AND subject = $2 AND approval_status = 'pending'`,
+                    [studentId, subject]
+                );
+                for (const s of scores) {
+                    await query(
+                        `INSERT INTO results (student_id, subject, score, exam_type, max_score, approval_status, submitted_by, submitted_at)
+                         VALUES ($1, $2, $3, $4, $5, 'pending', 'csv-import', NOW())`,
+                        [studentId, subject, s.score, s.examType, EXAM_TYPES[s.examType]?.maxScore || 100]
+                    );
+                }
+                imported++;
+            } catch (e) {
+                errors.push(`Row ${i+2}: ${e.message}`);
+            }
+        }
+
+        res.json({ message: `Imported ${imported} result(s).`, errors: errors.length > 0 ? errors : undefined });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
 
 module.exports = router;

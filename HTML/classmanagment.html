@@ -52,11 +52,15 @@
                 <div class="theme-toggle me-3" onclick="toggleTheme()" title="Toggle Dark Mode" style="cursor:pointer;">
                     <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
                 </div>
+                <a id="download-class-assign-template" class="btn btn-success btn-sm" href="/api/classes/assign-template/download" target="_blank"><i class="fas fa-download me-1"></i>Download Template</a>
+                <button id="upload-class-assign-csv-trigger" class="btn btn-warning btn-sm"><i class="fas fa-upload me-1"></i>Import CSV</button>
+                <input type="file" id="upload-class-assign-csv-input" accept=".csv" style="display:none;">
                 <button class="btn btn-primary btn-sm" id="btn-add-class"><i class="fas fa-plus me-1"></i> Add New Class</button>
             </div>
         </nav>
         <!-- Content Area -->
         <div class="content-area">
+            <div id="csv-toast-container" class="position-fixed bottom-0 end-0 p-3" style="z-index:9999;"></div>
             <div class="row g-4" id="class-cards-container">
                 <!-- Class cards will be populated by JS -->
             </div>
@@ -176,14 +180,16 @@
             classModal.show();
         });
 
-        classContainer.addEventListener('click', e => {
-            const id = e.target.dataset.id;
+        document.addEventListener('click', e => {
+            const btn = e.target.closest('.btn-edit-class, .btn-delete-class');
+            if (!btn) return;
+            const id = btn.dataset.id;
             if (!id) return;
             const targetClass = classes.find(c => c.id === parseInt(id));
             if (!targetClass) return;
+            e.preventDefault();
 
-            if (e.target.classList.contains('btn-edit-class')) {
-                e.preventDefault();
+            if (btn.classList.contains('btn-edit-class')) {
                 document.getElementById('classModalTitle').textContent = 'Edit Class';
                 classForm.dataset.mode = 'edit';
                 classForm.dataset.id = id;
@@ -195,11 +201,15 @@
                 classForm.elements.capacity.value = targetClass.capacity;
                 classForm.elements.color.value = targetClass.color;
                 classModal.show();
-            } else if (e.target.classList.contains('btn-delete-class')) {
-                e.preventDefault();
-                if (confirm(`Delete class ${targetClass.name}?`)) {
-                    fetch(`${CLASSES_API_URL}/${id}`, { method: 'DELETE' }).then(res => res.ok ? loadPageData() : alert('Deletion failed.'));
-                }
+            } else if (btn.classList.contains('btn-delete-class')) {
+                showCsvToast(`Moving "${targetClass.name}" to recycle bin...`, 'info');
+                fetch(`${CLASSES_API_URL}/${id}`, { method: 'DELETE' })
+                    .then(res => {
+                        if (!res.ok) throw new Error('Delete failed');
+                        loadPageData();
+                        showCsvToast(`"${targetClass.name}" moved to recycle bin.`, 'success');
+                    })
+                    .catch(err => showCsvToast('Error: ' + err.message, 'danger'));
             }
         });
 
@@ -226,6 +236,41 @@
         });
 
         loadPageData();
+
+        document.getElementById('upload-class-assign-csv-trigger').addEventListener('click', (e) => {
+            e.preventDefault();
+            document.getElementById('upload-class-assign-csv-input').click();
+        });
+
+        function showCsvToast(message, type) {
+            const container = document.getElementById('csv-toast-container');
+            const id = 'toast-' + Date.now();
+            container.innerHTML = `<div id="${id}" class="toast align-items-center text-bg-${type} border-0" role="alert" aria-live="assertive" aria-atomic="true"><div class="d-flex"><div class="toast-body">${message}</div><button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button></div></div>`;
+            const t = new bootstrap.Toast(document.getElementById(id), { delay: 6000 });
+            t.show();
+        }
+
+        document.getElementById('upload-class-assign-csv-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+            const btn = document.getElementById('upload-class-assign-csv-trigger');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Importing...';
+            try {
+                const res = await fetch('/api/classes/assign-csv', { method: 'POST', body: formData });
+                const data = await res.json();
+                if (!res.ok) throw new Error(data.error);
+                let msg = data.message;
+                if (data.errors && data.errors.length > 0) msg += '<br><small class="opacity-75">' + data.errors.slice(0,3).join('<br>') + (data.errors.length > 3 ? '<br>...and ' + (data.errors.length-3) + ' more' : '') + '</small>';
+                showCsvToast(msg, data.errors && data.errors.length > 0 ? 'warning' : 'success');
+                loadPageData();
+            } catch (err) {
+                showCsvToast('Error: ' + err.message, 'danger');
+            }
+            btn.innerHTML = '<i class="fas fa-upload me-2"></i>Import CSV';
+            e.target.value = '';
+        });
     });
 
 

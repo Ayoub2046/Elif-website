@@ -29,10 +29,10 @@ router.post('/', async (req, res) => {
     }
 });
 
-// DELETE a gallery item
+// DELETE a gallery item (soft-delete)
 router.delete('/:id', async (req, res) => {
     try {
-        await query(`DELETE FROM gallery_items WHERE id = $1`, [req.params.id]);
+        await query(`UPDATE gallery_items SET deleted_at = NOW() WHERE id = $1`, [req.params.id]);
         res.json({ message: 'deleted' });
     } catch (err) {
         res.status(400).json({ error: err.message });

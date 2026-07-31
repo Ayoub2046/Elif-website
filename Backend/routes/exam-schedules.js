@@ -70,10 +70,10 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE an exam schedule
+// DELETE an exam schedule (soft-delete)
 router.delete('/:id', async (req, res) => {
     try {
-        await query(`DELETE FROM exam_schedules WHERE id = $1`, [req.params.id]);
+        await query(`UPDATE exam_schedules SET deleted_at = NOW() WHERE id = $1`, [req.params.id]);
         res.json({ message: 'Exam schedule deleted.' });
     } catch (err) {
         res.status(400).json({ error: err.message });

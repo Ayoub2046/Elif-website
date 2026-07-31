@@ -80,10 +80,10 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// DELETE a timetable entry
+// DELETE a timetable entry (soft-delete)
 router.delete('/:id', async (req, res) => {
     try {
-        await query(`DELETE FROM timetables WHERE id = $1`, [req.params.id]);
+        await query(`UPDATE timetables SET deleted_at = NOW() WHERE id = $1`, [req.params.id]);
         res.json({ message: 'Timetable entry deleted.' });
     } catch (err) {
         res.status(400).json({ error: err.message });

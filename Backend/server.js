@@ -5,6 +5,7 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const db = require('./database');
 
 const app = express();
@@ -14,10 +15,29 @@ const PORT = 3000;
 app.use(cors());
 app.use(express.json());
 
+// --- 2. Static file serving (local only; Vercel handles static files natively) ---
+if (!process.env.VERCEL) {
+    const projectRoot = path.join(__dirname, '..');
+    app.use(express.static(projectRoot));
+    const uploadsPath = path.join(projectRoot, 'uploads');
+    app.use('/uploads', express.static(uploadsPath));
 
-const projectRoot = path.join(__dirname, '..');
-app.use(express.static(projectRoot));
-app.use('/uploads', express.static(path.join(projectRoot, 'uploads')));
+    // Fallback for any missing file under /uploads/ — serve transparent placeholder
+    app.use('/uploads', (req, res) => {
+        const filePath = path.join(uploadsPath, req.path);
+        if (!fs.existsSync(filePath)) {
+            res.set('Content-Type', 'image/svg+xml');
+            res.send('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"><rect fill="transparent"/></svg>');
+        } else {
+            res.status(404).end();
+        }
+    });
+
+    // Local root redirect
+    app.get('/', (req, res) => {
+        res.redirect('/HTML/index.html');
+    });
+}
 // --- 2. API Routes ---
 app.use('/api/students', require('./routes/students.js'));
 app.use('/api/auth', require('./routes/auth.js'));
@@ -44,6 +64,8 @@ app.use('/api/exam-schedules', require('./routes/exam-schedules.js'));
 app.use('/api/timetables', require('./routes/timetables.js'));
 app.use('/api/clearance', require('./routes/clearance.js'));
 app.use('/api/student-dashboard', require('./routes/student-dashboard.js'));
+app.use('/api/trash', require('./routes/trash.js'));
+app.use('/api/upload', require('./routes/upload.js'));
 
 // --- Auto-create class_students junction table if it doesn't exist ---
 // --- Auto-create activation columns if they don't exist ---
@@ -221,6 +243,14 @@ const { query } = require('./database');
                 console.error('Error adding results columns:', alterErr.message);
             }
         }
+        // Add deleted_at columns for soft-delete to all data tables
+        const softDeleteTables = ['students','users','results','fees','attendance_records','timetables','events','exam_schedules','clearance_cards','books','messages','gallery_items','content','news','classes','class_students'];
+        for (const tbl of softDeleteTables) {
+            try {
+                await query(`ALTER TABLE ${tbl} ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL`);
+            } catch (e) { /* ignore */ }
+        }
+        console.log('Soft-delete columns ready.');
     } catch (err) {
         console.error('Error creating tables:', err.message);
     }
@@ -283,14 +313,16 @@ setInterval(async () => {
     }
 }, 60000);
 
-// --- 5. Main Homepage Route ---
-app.get('/', (req, res) => {
-    res.redirect('/HTML/index.html');
-});
+// --- 5. Start the Server (local only, not on Vercel) ---
+if (!process.env.VERCEL) {
+    app.get('/', (req, res) => {
+        res.redirect('/HTML/index.html');
+    });
+    app.listen(PORT, '0.0.0.0', () => {
+        console.log(`\nServer is running successfully!`);
+        console.log(`View on your computer at: http://localhost:3000`);
+        console.log(`View on other devices on your network at: http://YOUR_IP_ADDRESS:3000`);
+    });
+}
 
-// --- 5. Start the Server ---
-app.listen(PORT, '0.0.0.0', () => {
-    console.log(`\nServer is running successfully!`);
-    console.log(`View on your computer at: http://localhost:3000`);
-    console.log(`View on other devices on your network at: http://YOUR_IP_ADDRESS:3000`);
-});
+module.exports = app;
