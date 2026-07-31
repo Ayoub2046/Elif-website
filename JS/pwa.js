@@ -7,11 +7,17 @@
 
   var deferredPrompt = null;
   var modal = null;
+  var pendingInstall = false;
+  var installWaitTimer = null;
   var promptedKey = 'elif-pwa-prompted';
 
   function isIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  }
+
+  function isAndroid() {
+    return /Android/i.test(navigator.userAgent);
   }
 
   function storageAvailable() {
@@ -25,6 +31,17 @@
 
   function closeModal() {
     if (modal) { modal.remove(); modal = null; }
+  }
+
+  function launchInstall() {
+    if (!deferredPrompt) return false;
+    deferredPrompt.prompt();
+    deferredPrompt.userChoice.then(function () {
+      deferredPrompt = null;
+      closeModal();
+      setPrompted();
+    });
+    return true;
   }
 
   function showInstructions() {
@@ -128,13 +145,17 @@
       'box-shadow:0 6px 18px rgba(15,81,14,.35);'
     ].join('');
     installBtn.addEventListener('click', function () {
-      if (deferredPrompt) {
-        deferredPrompt.prompt();
-        deferredPrompt.userChoice.then(function () {
-          deferredPrompt = null;
-          closeModal();
-          setPrompted();
-        });
+      if (launchInstall()) return;
+      if (isAndroid()) {
+        pendingInstall = true;
+        installBtn.disabled = true;
+        installBtn.textContent = 'Preparing install…';
+        installWaitTimer = setTimeout(function () {
+          pendingInstall = false;
+          installBtn.disabled = false;
+          installBtn.textContent = 'Install Now';
+          if (!launchInstall()) showInstructions();
+        }, 6000);
       } else {
         showInstructions();
       }
@@ -168,11 +189,17 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    showModal();
+    if (pendingInstall) {
+      launchInstall();
+    } else {
+      showModal();
+    }
   });
 
   window.addEventListener('appinstalled', function () {
     deferredPrompt = null;
+    pendingInstall = false;
+    if (installWaitTimer) clearTimeout(installWaitTimer);
     closeModal();
     setPrompted();
   });
