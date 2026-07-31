@@ -8,6 +8,51 @@ const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
 
+// --- Admissions open/close settings helpers ---
+async function ensureSettingsTable() {
+    await query(`CREATE TABLE IF NOT EXISTS app_settings (key TEXT PRIMARY KEY, value TEXT)`);
+}
+
+async function getSetting(key, defaultValue) {
+    await ensureSettingsTable();
+    const { rows } = await query(`SELECT value FROM app_settings WHERE key = $1`, [key]);
+    if (rows.length === 0) return defaultValue;
+    return rows[0].value;
+}
+
+async function setSetting(key, value) {
+    await ensureSettingsTable();
+    await query(
+        `INSERT INTO app_settings (key, value) VALUES ($1, $2)
+         ON CONFLICT (key) DO UPDATE SET value = $2`,
+        [key, value]
+    );
+}
+
+// GET current admission status (open/closed)
+router.get('/status', async (req, res) => {
+    try {
+        const open = (await getSetting('admissions_open', 'true')) === 'true';
+        res.json({ open });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PUT admissions status (admin toggle open/close)
+router.put('/status', async (req, res) => {
+    const { open } = req.body;
+    if (typeof open !== 'boolean') {
+        return res.status(400).json({ error: 'open (boolean) is required.' });
+    }
+    try {
+        await setSetting('admissions_open', String(open));
+        res.json({ open, message: open ? 'Admissions opened.' : 'Admissions closed.' });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+});
+
 // GET all applications
 router.get('/', async (req, res) => {
     try {
@@ -20,6 +65,16 @@ router.get('/', async (req, res) => {
 
 // POST a new application
 router.post('/', upload.single('applicationLetter'), async (req, res) => {
+    // Reject applications while admissions are closed
+    try {
+        const open = (await getSetting('admissions_open', 'true')) === 'true';
+        if (!open) {
+            return res.status(403).json({ error: 'Admissions are currently closed. Please check back later.' });
+        }
+    } catch (err) {
+        return res.status(500).json({ error: 'Could not verify admission status.' });
+    }
+
     const { name, birthDate, gradeToEnroll, previousSchool, parentName, parentEmail, parentPhone } = req.body;
     let applicationLetterPath = null;
     if (req.file) {

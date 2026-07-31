@@ -54,6 +54,27 @@
         </nav>
         
         <div class="content-area">
+            <!-- Admissions Open/Close Control -->
+            <div class="card main-table-card mb-4">
+                <div class="card-header"><h6><i class="fas fa-toggle-on me-2"></i>Admissions Control</h6></div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                        <div>
+                            <h5 class="mb-1">
+                                Online Admissions are
+                                <span id="admission-status-badge" class="badge bg-success">Open</span>
+                            </h5>
+                            <p class="text-muted mb-0" id="admission-status-text">
+                                Visitors can currently submit applications through the website.
+                            </p>
+                        </div>
+                        <button class="btn btn-primary" id="toggle-admissions-btn">
+                            <i class="fas fa-lock me-2"></i>Close Admissions
+                        </button>
+                    </div>
+                </div>
+            </div>
+
             <div class="card main-table-card">
                 <div class="card-header"><h6>Submitted Applications</h6></div>
                 <div class="card-body">
@@ -159,6 +180,62 @@
         
         // Initial load
         fetchApplications();
+
+        // --- Admissions Open/Close Control ---
+        let admissionsOpen = true;
+
+        async function loadAdmissionStatus() {
+            try {
+                const response = await fetch('/api/admissions/status');
+                const data = await response.json();
+                admissionsOpen = data.open !== false;
+                updateAdmissionUI();
+            } catch (error) {
+                console.error('Could not load admission status:', error);
+            }
+        }
+
+        function updateAdmissionUI() {
+            const badge = document.getElementById('admission-status-badge');
+            const text = document.getElementById('admission-status-text');
+            const btn = document.getElementById('toggle-admissions-btn');
+            if (admissionsOpen) {
+                badge.textContent = 'Open';
+                badge.className = 'badge bg-success';
+                text.textContent = 'Visitors can currently submit applications through the website.';
+                btn.innerHTML = '<i class="fas fa-lock me-2"></i>Close Admissions';
+                btn.className = 'btn btn-danger';
+            } else {
+                badge.textContent = 'Closed';
+                badge.className = 'badge bg-danger';
+                text.textContent = 'Visitors cannot submit applications right now.';
+                btn.innerHTML = '<i class="fas fa-lock-open me-2"></i>Open Admissions';
+                btn.className = 'btn btn-success';
+            }
+        }
+
+        document.getElementById('toggle-admissions-btn').addEventListener('click', async () => {
+            const btn = document.getElementById('toggle-admissions-btn');
+            btn.disabled = true;
+            try {
+                const response = await fetch('/api/admissions/status', {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ open: !admissionsOpen })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Failed to update admissions status');
+                admissionsOpen = result.open;
+                updateAdmissionUI();
+            } catch (error) {
+                console.error('Update Error:', error);
+                alert('Could not update admissions status: ' + error.message);
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        loadAdmissionStatus();
     });
 
     // Add this code inside your main <script> tag at the bottom of each admin page
