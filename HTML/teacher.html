@@ -101,8 +101,7 @@
                         <hr>
                         <div class="mb-3"><label class="form-label">Subject Taught</label><input type="text"
                                 name="subject" class="form-control"></div>
-                        <div class="mb-3"><label class="form-label">Image URL</label><input type="text" name="image"
-                                class="form-control"></div>
+                        <div class="mb-3"><label class="form-label">Photo</label><input type="file" id="teacher-image-file" class="form-control" accept="image/*"><input type="hidden" name="image"><div class="mt-2" id="teacher-image-preview" style="display:none;"><img src="" alt="Preview" style="max-height:120px;border-radius:6px;border:2px solid #dee2e6;"></div></div>
                     </div>
                     <div class="modal-footer"><button type="button" class="btn btn-secondary"
                             data-bs-dismiss="modal">Close</button><button type="submit" class="btn btn-primary">Save
@@ -127,7 +126,29 @@
             const teacherModal = new bootstrap.Modal(document.getElementById('teacherModal'));
             const teacherForm = document.getElementById('teacherForm');
             const API_URL = '/api/teachers';
+            const UPLOAD_API = '/api/upload';
             let teachers = [];
+
+            document.getElementById('teacher-image-file').addEventListener('change', async () => {
+                const input = document.getElementById('teacher-image-file');
+                const file = input.files[0];
+                if (!file) return;
+                const formData = new FormData();
+                formData.append('image', file);
+                formData.append('folder', 'teachers');
+                try {
+                    const res = await fetch(UPLOAD_API, { method: 'POST', body: formData });
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error);
+                    teacherForm.elements.image.value = data.url;
+                    const preview = document.getElementById('teacher-image-preview');
+                    preview.style.display = 'block';
+                    preview.querySelector('img').src = data.url;
+                } catch (error) {
+                    alert('Upload failed: ' + error.message);
+                    input.value = '';
+                }
+            });
 
             async function fetchTeachers() {
                 try {
@@ -161,6 +182,14 @@
                 teacherForm.elements.subject.value = teacher.subject || '';
                 teacherForm.elements.email.value = teacher.email;
                 teacherForm.elements.image.value = teacher.image || '';
+                const teacherPreview = document.getElementById('teacher-image-preview');
+                if (teacher.image) {
+                    teacherPreview.style.display = 'block';
+                    teacherPreview.querySelector('img').src = teacher.image;
+                } else {
+                    teacherPreview.style.display = 'none';
+                    teacherPreview.querySelector('img').src = '';
+                }
                 teacherModal.show();
             });
 
