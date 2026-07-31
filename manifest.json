@@ -1,25 +1,34 @@
 {
-  "name": "Elif PU College - Student Dashboard",
-  "short_name": "Elif Student",
-  "description": "Student dashboard for Elif PU College — results, attendance, timetable, exams, and clearance.",
-  "start_url": "/HTML/Student%20Results.html",
+  "name": "Elif PU College",
+  "short_name": "Elif PU",
+  "description": "Elif PU College app — student results, attendance, timetable, digital library, news, and teacher dashboard.",
+  "id": "/",
+  "start_url": "/HTML/index.html",
+  "scope": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
   "background_color": "#f0f2f5",
   "theme_color": "#0f510e",
-  "scope": "/",
+  "lang": "en",
+  "categories": ["education", "productivity"],
   "icons": [
     {
-      "src": "/images/ALIF.png",
+      "src": "/images/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/images/ALIF.png",
+      "src": "/images/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/images/icons/icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }
