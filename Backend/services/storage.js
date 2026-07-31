@@ -30,14 +30,22 @@ function assertSupabaseConfigured() {
 async function uploadBuffer(buffer, folder, filename, contentType) {
     const supabase = getSupabase();
     if (supabase) {
+        const { data: buckets } = await supabase.storage.listBuckets();
+        if (!buckets || !buckets.some(b => b.name === BUCKET)) {
+            const { error: createError } = await supabase.storage.createBucket(BUCKET, { public: true });
+            if (createError && !String(createError.message || '').toLowerCase().includes('already exists')) {
+                throw new Error('Could not create uploads bucket: ' + createError.message);
+            }
+        }
+        const bucket = supabase.storage.from(BUCKET);
         const safeName = Date.now() + '-' + Math.random().toString(36).substring(2, 8) + path.extname(filename || '.bin');
         const storagePath = `${folder}/${safeName}`;
-        const { error } = await supabase.storage.from(BUCKET).upload(storagePath, buffer, {
+        const { error } = await bucket.upload(storagePath, buffer, {
             contentType: contentType || 'application/octet-stream',
             upsert: false
         });
         if (error) throw new Error(error.message);
-        const { data } = supabase.storage.from(BUCKET).getPublicUrl(storagePath);
+        const { data } = bucket.getPublicUrl(storagePath);
         return data.publicUrl;
     }
 
