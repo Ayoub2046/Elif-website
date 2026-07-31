@@ -14,20 +14,26 @@
 <body>
 
     <!-- Main Navigation Bar -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light sticky-top">
         <div class="container">
-            <a class="navbar-brand" href="/HTML/index.html"><img src="/images/ALIF.png" alt="Logo"
-                    style="width: 40px; height: 40px;"> Elif Pu Collage</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#main-nav"><span
+            <a class="navbar-brand d-flex align-items-center" href="/HTML/index.html"><img src="/images/ALIF.png" alt="Logo"
+                    style="width: 40px; height: 40px; border-radius: 50%; margin-right: 10px;"> Elif Pu Collage</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNav"
+                aria-controls="mainNav" aria-expanded="false" aria-label="Toggle navigation"><span
                     class="navbar-toggler-icon"></span></button>
-            <div class="collapse navbar-collapse" id="main-nav">
-                <ul class="navbar-nav ms-auto">
+            <div class="collapse navbar-collapse" id="mainNav">
+                <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
                     <li class="nav-item"><a class="nav-link" href="/HTML/index.html">Home</a></li>
                     <li class="nav-item"><a class="nav-link" href="/HTML/about.html">About Us</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/HTML/academics.html">Academics</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/HTML/admision.html">Admissions</a></li>
                     <li class="nav-item"><a class="nav-link" href="/HTML/news.html">News & Events</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/HTML/gallery.html">Gallery</a></li>
                     <li class="nav-item"><a class="nav-link active" href="/HTML/contact.html">Contact</a></li>
-                    <li class="nav-item"><a class="nav-link" href="/HTML/Student Results.html">Student Results</a></li>
+                    <li class="nav-item"><a class="nav-link fw-bold text-primary" href="/HTML/Student Results.html">Check Results</a></li>
+                    <li class="nav-item"><a class="nav-link" href="/HTML/student-library.html">Student Library</a></li>
                 </ul>
+                <a class="btn btn-primary ms-lg-3" href="/HTML/portal_login.html">Portal Login</a>
             </div>
         </div>
     </nav>
