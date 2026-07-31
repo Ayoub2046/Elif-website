@@ -1,20 +1,32 @@
 // Backend/services/storage.js
-// Uploads files to Supabase Storage on Vercel (serverless = read-only filesystem).
-// Falls back to local disk uploads/ when running locally (no SUPABASE_URL set).
+// Uploads files to Supabase Storage. Vercel's serverless runtime has a
+// read-only filesystem, so uploads MUST go to Supabase Storage on Vercel.
+// Falls back to local disk uploads/ only when running locally.
 
 const fs = require('fs');
 const path = require('path');
 
+const IS_VERCEL = !!process.env.VERCEL;
+
 function getSupabase() {
-    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) return null;
+    const url = process.env.SUPABASE_URL;
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    if (!url || !key) return null;
     const { createClient } = require('@supabase/supabase-js');
-    return createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    return createClient(url, key);
 }
 
 const BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'uploads';
 
+function assertSupabaseConfigured() {
+    if (IS_VERCEL) {
+        throw new Error(
+            'Supabase Storage is not configured. On Vercel, set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY in Vercel -> Project -> Settings -> Environment Variables, then redeploy.'
+        );
+    }
+}
+
 // Uploads a file buffer to Supabase Storage, returns a public URL.
-// Falls back to local disk (uploads/<folder>/<filename>) when Supabase isn't configured.
 async function uploadBuffer(buffer, folder, filename, contentType) {
     const supabase = getSupabase();
     if (supabase) {
@@ -29,7 +41,9 @@ async function uploadBuffer(buffer, folder, filename, contentType) {
         return data.publicUrl;
     }
 
-    // Local fallback
+    assertSupabaseConfigured();
+
+    // Local fallback (development only)
     const dir = path.join(__dirname, '..', '..', 'uploads', folder);
     fs.mkdirSync(dir, { recursive: true });
     const safeName = Date.now() + '-' + Math.random().toString(36).substring(2, 8) + path.extname(filename || '.bin');
