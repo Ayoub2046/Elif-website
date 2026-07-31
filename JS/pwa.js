@@ -6,111 +6,160 @@
   if (isStandalone) return;
 
   var deferredPrompt = null;
-  var btn = null;
+  var modal = null;
+  var promptedKey = 'elif-pwa-prompted';
 
   function isIOS() {
     return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
       (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
   }
 
-  function removeButton() {
-    if (btn) { btn.remove(); btn = null; }
+  function storageAvailable() {
+    try { localStorage.setItem('__t', '1'); localStorage.removeItem('__t'); return true; }
+    catch (e) { return false; }
+  }
+
+  function setPrompted() {
+    if (storageAvailable()) localStorage.setItem(promptedKey, '1');
+  }
+
+  function closeModal() {
+    if (modal) { modal.remove(); modal = null; }
   }
 
   function showInstructions() {
-    if (document.getElementById('elif-pwa-modal')) return;
-
+    if (!modal) return;
     var steps;
     if (isIOS()) {
       steps = [
-        'Tap the <b>Share</b> button in Safari',
-        'Scroll down and tap <b>Add to Home Screen</b>',
-        'Tap <b>Add</b> to install the Elif PU app'
+        'Tap the Share button in Safari',
+        'Scroll down and tap Add to Home Screen',
+        'Tap Add to finish installing the app'
       ];
     } else {
       steps = [
         'Open the browser menu (three dots)',
-        'Tap <b>Add to Home screen</b> or <b>Install app</b>',
+        'Tap Add to Home screen or Install app',
         'Confirm to install the Elif PU app'
       ];
     }
 
-    var modal = document.createElement('div');
+    var box = modal.querySelector('.elif-pwa-box');
+    box.innerHTML = '';
+
+    var icon = document.createElement('img');
+    icon.src = '/images/icons/icon-192.png';
+    icon.alt = 'Elif PU';
+    icon.style.cssText = 'width:60px;height:60px;border-radius:14px;display:block;margin:0 auto 14px;';
+    box.appendChild(icon);
+
+    var title = document.createElement('h3');
+    title.textContent = 'Install Elif PU College';
+    title.style.cssText = 'margin:0 0 16px;font-size:19px;text-align:center;color:#0f510e;font-weight:700;';
+    box.appendChild(title);
+
+    var list = document.createElement('ol');
+    list.style.cssText = 'margin:0 0 20px;padding-left:20px;font-size:14px;line-height:2;color:#333;text-align:left;';
+    steps.forEach(function (s) {
+      var li = document.createElement('li');
+      li.textContent = s;
+      list.appendChild(li);
+    });
+    box.appendChild(list);
+
+    var doneBtn = document.createElement('button');
+    doneBtn.textContent = 'Got it';
+    doneBtn.style.cssText = [
+      'width:100%;padding:12px;border:none;border-radius:10px;',
+      'background:linear-gradient(135deg,#0f510e,#1b9e1b);color:#fff;',
+      'font-size:15px;font-weight:600;cursor:pointer;'
+    ].join('');
+    doneBtn.addEventListener('click', closeModal);
+    box.appendChild(doneBtn);
+  }
+
+  function showModal() {
+    if (modal || document.getElementById('elif-pwa-modal')) return;
+    if (storageAvailable() && localStorage.getItem(promptedKey)) return;
+
+    modal = document.createElement('div');
     modal.id = 'elif-pwa-modal';
     modal.style.cssText = [
-      'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.6);',
-      'display:flex;align-items:center;justify-content:center;padding:20px;'
+      'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.55);',
+      'display:flex;align-items:center;justify-content:center;padding:20px;',
+      'animation:elifFadeIn .25s ease;'
     ].join('');
-    modal.addEventListener('click', function () { modal.remove(); });
+    modal.addEventListener('click', function (e) {
+      if (e.target === modal) { closeModal(); setPrompted(); }
+    });
 
     var box = document.createElement('div');
+    box.className = 'elif-pwa-box';
     box.style.cssText = [
-      'background:#fff;border-radius:16px;max-width:360px;width:100%;',
-      'padding:24px;box-shadow:0 12px 40px rgba(0,0,0,.25);',
-      'font-family:inherit;color:#222;'
+      'background:#fff;border-radius:18px;max-width:360px;width:100%;',
+      'padding:26px;box-shadow:0 16px 50px rgba(0,0,0,.3);',
+      'text-align:center;font-family:inherit;color:#222;',
+      'animation:elifPopIn .3s ease;'
     ].join('');
     box.addEventListener('click', function (e) { e.stopPropagation(); });
 
     var icon = document.createElement('img');
     icon.src = '/images/icons/icon-192.png';
     icon.alt = 'Elif PU';
-    icon.style.cssText = 'width:56px;height:56px;border-radius:12px;display:block;margin:0 auto 12px;';
+    icon.style.cssText = 'width:72px;height:72px;border-radius:18px;display:block;margin:0 auto 14px;box-shadow:0 4px 14px rgba(15,81,14,.3);';
     box.appendChild(icon);
 
-    var title = document.createElement('h3');
-    title.textContent = 'Install Elif PU College';
-    title.style.cssText = 'margin:0 0 14px;font-size:18px;text-align:center;color:#0f510e;';
+    var title = document.createElement('h2');
+    title.textContent = 'Install the Elif PU App';
+    title.style.cssText = 'margin:0 0 8px;font-size:20px;color:#0f510e;font-weight:800;';
     box.appendChild(title);
 
-    var list = document.createElement('ol');
-    list.style.cssText = 'margin:0 0 18px;padding-left:20px;font-size:14px;line-height:1.9;color:#333;';
-    steps.forEach(function (s) {
-      var li = document.createElement('li');
-      li.innerHTML = s;
-      list.appendChild(li);
-    });
-    box.appendChild(list);
+    var sub = document.createElement('p');
+    sub.textContent = 'Get results, attendance, timetable and library access right on your home screen — even offline.';
+    sub.style.cssText = 'margin:0 0 20px;font-size:14px;line-height:1.6;color:#555;';
+    box.appendChild(sub);
 
-    var closeBtn = document.createElement('button');
-    closeBtn.textContent = 'Got it';
-    closeBtn.style.cssText = [
-      'width:100%;padding:11px;border:none;border-radius:8px;',
+    var installBtn = document.createElement('button');
+    installBtn.textContent = 'Install Now';
+    installBtn.style.cssText = [
+      'width:100%;padding:13px;border:none;border-radius:10px;',
       'background:linear-gradient(135deg,#0f510e,#1b9e1b);color:#fff;',
-      'font-size:15px;font-weight:600;cursor:pointer;'
+      'font-size:16px;font-weight:700;cursor:pointer;',
+      'box-shadow:0 6px 18px rgba(15,81,14,.35);'
     ].join('');
-    closeBtn.addEventListener('click', function () { modal.remove(); });
-    box.appendChild(closeBtn);
+    installBtn.addEventListener('click', function () {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        deferredPrompt.userChoice.then(function () {
+          deferredPrompt = null;
+          closeModal();
+          setPrompted();
+        });
+      } else {
+        showInstructions();
+      }
+    });
+    box.appendChild(installBtn);
+
+    var laterBtn = document.createElement('button');
+    laterBtn.textContent = 'Not now';
+    laterBtn.style.cssText = [
+      'width:100%;padding:10px;margin-top:8px;border:none;background:none;',
+      'color:#888;font-size:14px;font-weight:600;cursor:pointer;'
+    ].join('');
+    laterBtn.addEventListener('click', function () { closeModal(); setPrompted(); });
+    box.appendChild(laterBtn);
 
     modal.appendChild(box);
     document.body.appendChild(modal);
   }
 
-  function onInstallClick() {
-    if (deferredPrompt) {
-      deferredPrompt.prompt();
-      deferredPrompt.userChoice.then(function () { deferredPrompt = null; removeButton(); });
-    } else {
-      showInstructions();
-    }
-  }
-
-  function showButton() {
-    if (btn || document.getElementById('elif-pwa-install-btn')) return;
-    btn = document.createElement('button');
-    btn.id = 'elif-pwa-install-btn';
-    btn.innerHTML = '<i class="fas fa-download"></i> Install Elif PU App';
-    btn.setAttribute('aria-label', 'Install the Elif PU College app');
-    btn.style.cssText = [
-      'position:fixed;bottom:18px;right:18px;z-index:99999;',
-      'display:flex;align-items:center;gap:8px;',
-      'padding:10px 16px;border:none;border-radius:50px;',
-      'background:linear-gradient(135deg,#0f510e,#1b9e1b);color:#fff;',
-      'font-size:14px;font-weight:600;font-family:inherit;',
-      'box-shadow:0 6px 20px rgba(15,81,14,.4);cursor:pointer;'
-    ].join('');
-    btn.addEventListener('click', onInstallClick);
-    document.body.appendChild(btn);
-  }
+  var style = document.createElement('style');
+  style.textContent = [
+    '@keyframes elifFadeIn{from{opacity:0}to{opacity:1}}',
+    '@keyframes elifPopIn{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}'
+  ].join('\n');
+  document.head.appendChild(style);
 
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/service-worker.js').catch(function () {});
@@ -119,13 +168,14 @@
   window.addEventListener('beforeinstallprompt', function (e) {
     e.preventDefault();
     deferredPrompt = e;
-    showButton();
+    showModal();
   });
 
   window.addEventListener('appinstalled', function () {
     deferredPrompt = null;
-    removeButton();
+    closeModal();
+    setPrompted();
   });
 
-  window.setTimeout(showButton, 2000);
+  window.setTimeout(showModal, 2500);
 })();
