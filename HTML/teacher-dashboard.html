@@ -797,13 +797,16 @@
             if (!subject) { $('results-alert').innerHTML = '<div class="alert alert-warning">Enter a subject.</div>'; return; }
             const records = Object.entries(currentResultsStudents).map(([id,d]) => ({studentId:parseInt(id),subject,examType,score:d.score}));
             if (records.length===0) { $('results-alert').innerHTML = '<div class="alert alert-warning">No students.</div>'; return; }
+            const btn = $('submit-results-btn');
+            const original = btn.innerHTML;
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting...';
             try {
-                for (const rec of records) {
-                    const r = await fetch('/api/results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...rec,teacherId:activeUser.id,teacherName:activeUser.name})});
-                    if (!r.ok) { const e=await r.json(); throw new Error(e.error||'Failed'); }
-                }
+                const r = await fetch('/api/results/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records,teacherId:activeUser.id,teacherName:activeUser.name})});
+                const data = await r.json();
+                if (!r.ok) throw new Error(data.error||'Failed');
                 submittedExamKeys.add(examType + '|' + subject);
-                $('results-alert').innerHTML = '<div class="alert alert-success alert-dismissible fade show">Submitted for approval!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+                $('results-alert').innerHTML = `<div class="alert alert-success alert-dismissible fade show">${data.message || 'Submitted for approval!'}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
                 loadSubmittedResults();
                 renderSubmissionStatus();
                 $('results-subject').value = '';
@@ -811,6 +814,7 @@
                 $$('.stot').forEach(el=>el.textContent='0');
                 Object.keys(currentResultsStudents).forEach(id => {currentResultsStudents[id].score=0;});
             } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+            finally { btn.disabled = false; btn.innerHTML = original; }
         });
 
         // CSV Upload trigger

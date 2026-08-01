@@ -196,6 +196,50 @@ router.post('/', async (req, res) => {
     }
 });
 
+// POST submit multiple results in one transaction (fast, single connection)
+router.post('/batch', async (req, res) => {
+    const { records, teacherId, teacherName } = req.body;
+    if (!records || !Array.isArray(records) || records.length === 0) {
+        return res.status(400).json({ error: 'records array is required.' });
+    }
+    const client = await pool.connect();
+    try {
+        await client.query('BEGIN');
+        for (const rec of records) {
+            const { studentId, subject, examType, score } = rec;
+            if (!studentId || !subject || !examType) {
+                throw new Error('studentId, subject and examType are required for every record.');
+            }
+            const { rows: examRows } = await client.query(
+                `SELECT id FROM exams WHERE exam_key = $1 AND deleted_at IS NULL LIMIT 1`,
+                [examType]
+            );
+            if (examRows.length === 0 && !EXAM_TYPES[examType]) {
+                throw new Error('Please select a valid exam to record a result for.');
+            }
+            const maxScore = await getExamMaxScore(examType);
+            const parsedScore = Math.min(parseFloat(score) || 0, maxScore);
+
+            await client.query(
+                `DELETE FROM results WHERE student_id = $1 AND subject = $2 AND exam_type = $3 AND submitted_by = $4 AND approval_status = 'pending'`,
+                [studentId, subject, examType, teacherName || `Teacher-${teacherId}`]
+            );
+            await client.query(
+                `INSERT INTO results (student_id, subject, score, exam_type, max_score, approval_status, submitted_by, submitted_at)
+                 VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW())`,
+                [studentId, subject, parsedScore, examType, maxScore, teacherName || `Teacher-${teacherId}`]
+            );
+        }
+        await client.query('COMMIT');
+        res.status(201).json({ message: `${records.length} results submitted for approval.` });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        res.status(400).json({ error: err.message });
+    } finally {
+        client.release();
+    }
+});
+
 // PUT approve/reject results (admin)
 router.put('/approve', async (req, res) => {
     const { ids, status } = req.body;
