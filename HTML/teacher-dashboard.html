@@ -766,6 +766,8 @@
             try {
                 const res = await fetch(`/api/classes/${classId}/students`);
                 const students = await res.json();
+                if (!res.ok) throw new Error(students.error || 'Failed to load students');
+                if (!Array.isArray(students)) throw new Error('Unexpected response loading students');
                 const et = examDefs[examType] || { label: examType, max: 100 };
                 $('results-entry-card').classList.remove('d-none');
                 $('results-exam-th').textContent = `${et.label} (/${et.max})`;
