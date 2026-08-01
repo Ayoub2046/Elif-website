@@ -168,14 +168,18 @@ router.post('/', async (req, res) => {
     }
     try {
         // Validate the exam exists (admin-defined exams are supported)
-        const { rows: examRows } = await query(
-            `SELECT id FROM exams WHERE exam_key = $1 AND deleted_at IS NULL LIMIT 1`,
-            [examType]
-        );
-        if (examRows.length === 0 && !EXAM_TYPES[examType]) {
-            return res.status(400).json({ error: 'Please select a valid exam to record a result for.' });
-        }
-        const maxScore = await getExamMaxScore(examType);
+        let maxScore = 100;
+        try {
+            const { rows: examRows } = await query(
+                `SELECT max_score FROM exams WHERE exam_key = $1 AND deleted_at IS NULL LIMIT 1`,
+                [examType]
+            );
+            if (examRows[0]) {
+                maxScore = parseFloat(examRows[0].max_score);
+            } else if (EXAM_TYPES[examType]) {
+                maxScore = EXAM_TYPES[examType].maxScore;
+            }
+        } catch (e) { /* fall back to default */ }
         const parsedScore = Math.min(parseFloat(score) || 0, maxScore);
 
         // Delete any existing pending result for this student/subject/exam from this teacher
@@ -216,9 +220,6 @@ router.post('/batch', async (req, res) => {
                 [examType]
             );
             const def = EXAM_TYPES[examType];
-            if (examRows.length === 0 && !def) {
-                throw new Error('Please select a valid exam to record a result for.');
-            }
             const maxScore = examRows[0] ? parseFloat(examRows[0].max_score) : (def ? def.maxScore : 100);
             const parsedScore = Math.min(parseFloat(score) || 0, maxScore);
 
