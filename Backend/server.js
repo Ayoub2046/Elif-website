@@ -66,6 +66,8 @@ app.use('/api/clearance', require('./routes/clearance.js'));
 app.use('/api/student-dashboard', require('./routes/student-dashboard.js'));
 app.use('/api/trash', require('./routes/trash.js'));
 app.use('/api/upload', require('./routes/upload.js'));
+app.use('/api/exams', require('./routes/exams.js'));
+app.use('/api/announcements', require('./routes/announcements.js'));
 
 // --- Auto-create class_students junction table if it doesn't exist ---
 // --- Auto-create activation columns if they don't exist ---
@@ -251,6 +253,56 @@ const { query } = require('./database');
             } catch (e) { /* ignore */ }
         }
         console.log('Soft-delete columns ready.');
+
+        // Create exams table (dynamic exam definitions, e.g. Quiz 1, Semester 1, ...)
+        await query(`
+            CREATE TABLE IF NOT EXISTS exams (
+                id SERIAL PRIMARY KEY,
+                name TEXT NOT NULL,
+                exam_key TEXT NOT NULL UNIQUE,
+                max_score NUMERIC(5,2) DEFAULT 100,
+                sort_order INTEGER DEFAULT 0,
+                active BOOLEAN DEFAULT true,
+                deleted_at TIMESTAMP
+            )
+        `);
+        // Seed the standard exams if the table is empty
+        await query(`
+            INSERT INTO exams (name, exam_key, max_score, sort_order) VALUES
+                ('Quiz 1', 'quiz1', 5, 1),
+                ('Quiz 2', 'quiz2', 5, 2),
+                ('Semester 1', 'sem1', 5, 3),
+                ('Semester 2', 'sem2', 5, 4),
+                ('Midterm', 'midterm', 40, 5),
+                ('Final', 'final', 40, 6)
+            ON CONFLICT (exam_key) DO NOTHING
+        `);
+        console.log('exams table ready.');
+
+        // Create class_exams junction table (which exams are assigned to each class)
+        await query(`
+            CREATE TABLE IF NOT EXISTS class_exams (
+                class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
+                exam_id INTEGER REFERENCES exams(id) ON DELETE CASCADE,
+                assigned_at TIMESTAMP DEFAULT NOW(),
+                PRIMARY KEY (class_id, exam_id)
+            )
+        `);
+        console.log('class_exams table ready.');
+
+        // Create announcements table (broadcasts shown on student dashboards)
+        await query(`
+            CREATE TABLE IF NOT EXISTS announcements (
+                id SERIAL PRIMARY KEY,
+                title TEXT NOT NULL,
+                message TEXT,
+                audience TEXT DEFAULT 'all',
+                created_by TEXT,
+                created_at TIMESTAMP DEFAULT NOW(),
+                deleted_at TIMESTAMP
+            )
+        `);
+        console.log('announcements table ready.');
     } catch (err) {
         console.error('Error creating tables:', err.message);
     }

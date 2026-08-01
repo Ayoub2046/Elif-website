@@ -351,6 +351,10 @@
                 </div>
                 <div class="col-lg-4">
                     <div class="td-card">
+                        <div class="td-card-h"><h5><i class="fas fa-check-circle"></i> Submission Status</h5></div>
+                        <div class="td-card-b p-0" id="submission-status-list" style="max-height:400px;overflow-y:auto;"></div>
+                    </div>
+                    <div class="td-card mt-3">
                         <div class="td-card-h"><h5><i class="fas fa-history"></i> Submitted Results</h5></div>
                         <div class="td-card-b p-0" id="submitted-results-list" style="max-height:400px;overflow-y:auto;"></div>
                     </div>
@@ -416,12 +420,31 @@
 
         let teacherClasses = [], allStudents = [], currentAttendance = {}, currentResultsStudents = {};
         let trendChart = null;
-        const EXAM_TYPES = {quiz1:{max:5,label:'Quiz 1'},quiz2:{max:5,label:'Quiz 2'},sem1:{max:5,label:'Sem 1'},sem2:{max:5,label:'Sem 2'},midterm:{max:40,label:'Midterm'},final:{max:40,label:'Final'}};
+        let examDefs = {};          // examKey -> {label, max, id}
+        let submittedExamKeys = new Set();  // exam keys already submitted for the current class+subject
 
-        // Populate exam selector
-        Object.entries(EXAM_TYPES).forEach(([key, et]) => {
-            $('results-exam-select').innerHTML += `<option value="${key}">${et.label} (/${et.max})</option>`;
-        });
+        // Populate exam selector from /api/exams (admin can change these anytime)
+        async function loadExams(classId) {
+            const url = classId ? `/api/exams/class/${classId}` : '/api/exams';
+            try {
+                const res = await fetch(url);
+                const exams = await res.json();
+                const active = exams.filter(e => e.active !== false);
+                examDefs = {};
+                active.forEach(e => { examDefs[e.exam_key] = { label: e.name, max: parseFloat(e.max_score) || 100, id: e.id }; });
+                $('results-exam-select').innerHTML = '<option value="">-- Select Exam --</option>';
+                active.forEach(e => {
+                    $('results-exam-select').innerHTML += `<option value="${e.exam_key}">${e.name} (/${parseFloat(e.max_score) || 100})</option>`;
+                });
+                if (active.length === 0) {
+                    $('results-alert').innerHTML = '<div class="alert alert-warning">No exams defined. Ask an admin to add exams in Manage Exams.</div>';
+                }
+                renderSubmissionStatus();
+            } catch (err) {
+                $('results-exam-select').innerHTML = '<option value="">-- Select Exam --</option>';
+                $('results-alert').innerHTML = `<div class="alert alert-danger">Could not load exams: ${err.message}</div>`;
+            }
+        }
 
         // === NAV ===
         $$('[data-section]').forEach(btn => btn.addEventListener('click', () => {
@@ -460,6 +483,7 @@
                 $('load-attendance-btn').disabled = false;
                 $('load-results-students-btn').disabled = false;
             }
+            loadExams(teacherClasses.length > 0 ? teacherClasses[0].id : null);
 
             // Load all students for directory
             const allStudentPromises = data.classes.map(c => fetch(`/api/classes/${c.id}/students`).then(r => r.json()));
@@ -720,8 +744,14 @@
 
         // === RESULTS ===
         $('load-results-students-btn').addEventListener('click', loadResultsStudents);
-        $('results-class-select').addEventListener('change', () => { if ($('results-class-select').value) loadResultsStudents(); });
+        $('results-class-select').addEventListener('change', () => {
+            if ($('results-class-select').value) {
+                loadExams($('results-class-select').value);
+                loadResultsStudents();
+            }
+        });
         $('results-exam-select').addEventListener('change', () => { if ($('results-class-select').value) loadResultsStudents(); });
+        $('results-subject').addEventListener('input', renderSubmissionStatus);
 
         async function loadResultsStudents() {
             const classId = $('results-class-select').value;
@@ -734,7 +764,7 @@
             try {
                 const res = await fetch(`/api/classes/${classId}/students`);
                 const students = await res.json();
-                const et = EXAM_TYPES[examType];
+                const et = examDefs[examType] || { label: examType, max: 100 };
                 $('results-entry-card').classList.remove('d-none');
                 $('results-exam-th').textContent = `${et.label} (/${et.max})`;
                 const tbody = $('results-table-body');
@@ -747,7 +777,7 @@
                     </tr>`;
                 }).join('');
                 $$('.si').forEach(inp => inp.addEventListener('change', e => {
-                    const sid = e.target.dataset.sid, max = EXAM_TYPES[examType].max;
+                    const sid = e.target.dataset.sid, max = (examDefs[examType] || {max:100}).max;
                     let v = parseInt(e.target.value)||0; if(v>max){v=max;e.target.value=v;}
                     if(v<0){v=0;e.target.value=0;}
                     currentResultsStudents[sid].score=v;
@@ -768,8 +798,10 @@
                     const r = await fetch('/api/results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...rec,teacherId:activeUser.id,teacherName:activeUser.name})});
                     if (!r.ok) { const e=await r.json(); throw new Error(e.error||'Failed'); }
                 }
+                submittedExamKeys.add(examType + '|' + subject);
                 $('results-alert').innerHTML = '<div class="alert alert-success alert-dismissible fade show">Submitted for approval!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
                 loadSubmittedResults();
+                renderSubmissionStatus();
                 $('results-subject').value = '';
                 $$('.si').forEach(i=>i.value=0);
                 $$('.stot').forEach(el=>el.textContent='0');
@@ -812,13 +844,37 @@
                 const el = $('submitted-results-list');
                 if (results.length===0) { el.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:0.85rem;">No results submitted.</div>'; return; }
                 const badge = {'pending':'bg-warning text-dark','approved':'bg-success','rejected':'bg-danger'};
-                const examLabel = {'quiz1':'Quiz 1','quiz2':'Quiz 2','sem1':'Sem 1','sem2':'Sem 2','midterm':'Midterm','final':'Final'};
                 const grouped = {};
-                results.forEach(r => { const k=r.student_id+'-'+r.subject+'-'+r.exam_type; if(!grouped[k]) grouped[k]={name:r.studentName,subject:r.subject,exam_type:r.exam_type,status:r.approval_status,score:0}; grouped[k].score=parseFloat(r.score); });
+                results.forEach(r => {
+                    submittedExamKeys.add(r.exam_type + '|' + r.subject);
+                    const k=r.student_id+'-'+r.subject+'-'+r.exam_type; if(!grouped[k]) grouped[k]={name:r.studentName,subject:r.subject,exam_type:r.exam_type,status:r.approval_status,score:0}; grouped[k].score=parseFloat(r.score);
+                });
                 el.innerHTML = Object.values(grouped).map(g => {
-                    return `<div class="p-2 border-bottom" style="font-size:0.8rem;"><div class="fw-bold">${g.name}</div><div class="d-flex justify-content-between"><span>${g.subject} · ${examLabel[g.exam_type]||g.exam_type} · ${g.score}/${EXAM_TYPES[g.exam_type]?.max||100}</span><span class="badge ${badge[g.status]||'bg-secondary'}">${g.status}</span></div></div>`;
+                    const d = examDefs[g.exam_type] || {label:g.exam_type, max:100};
+                    return `<div class="p-2 border-bottom" style="font-size:0.8rem;"><div class="fw-bold">${g.name}</div><div class="d-flex justify-content-between"><span>${g.subject} · ${d.label} · ${g.score}/${d.max}</span><span class="badge ${badge[g.status]||'bg-secondary'}">${g.status}</span></div></div>`;
                 }).join('');
+                renderSubmissionStatus();
             } catch(e) { console.error(e); }
+        }
+
+        // Show which exams have been submitted vs not submitted for the selected class+subject
+        function renderSubmissionStatus() {
+            const el = $('submission-status-list');
+            if (!el) return;
+            const subject = ($('results-subject').value || '').trim().toLowerCase();
+            const keys = Object.keys(examDefs);
+            if (keys.length === 0) {
+                el.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:0.8rem;">No exams defined.</div>';
+                return;
+            }
+            el.innerHTML = keys.map(k => {
+                const d = examDefs[k];
+                const done = subject ? submittedExamKeys.has(k + '|' + subject) : false;
+                return `<div class="d-flex justify-content-between align-items-center p-2 border-bottom" style="font-size:0.8rem;">
+                    <span>${d.label}</span>
+                    ${done ? '<span class="badge bg-success"><i class="fas fa-check me-1"></i>Submitted</span>' : '<span class="badge bg-secondary"><i class="fas fa-clock me-1"></i>Not submitted</span>'}
+                </div>`;
+            }).join('');
         }
         loadSubmittedResults();
 

@@ -20,9 +20,31 @@ const EXAM_TYPES = {
 };
 
 // GET exam type definitions
-router.get('/exam-types/definitions', (req, res) => {
+router.get('/exam-types/definitions', async (req, res) => {
+    try {
+        const { rows } = await query(
+            `SELECT exam_key, name, max_score, sort_order FROM exams WHERE deleted_at IS NULL ORDER BY sort_order ASC`
+        );
+        if (rows.length > 0) {
+            const defs = {};
+            rows.forEach(r => { defs[r.exam_key] = { label: r.name, maxScore: parseFloat(r.max_score), order: r.sort_order }; });
+            return res.json(defs);
+        }
+    } catch (e) { /* fall through to defaults */ }
     res.json(EXAM_TYPES);
 });
+
+// Helper: get the max score for an exam from the DB (fallback to defaults)
+async function getExamMaxScore(examKey) {
+    try {
+        const { rows } = await query(
+            `SELECT max_score FROM exams WHERE exam_key = $1 AND deleted_at IS NULL LIMIT 1`,
+            [examKey]
+        );
+        if (rows[0]) return parseFloat(rows[0].max_score);
+    } catch (e) { }
+    return EXAM_TYPES[examKey]?.maxScore || 100;
+}
 
 // GET approved results for a specific student (for student/parent view)
 // Optional ?examType= filter returns results for a single exam only
@@ -141,11 +163,19 @@ router.post('/', async (req, res) => {
     if (!studentId || !subject) {
         return res.status(400).json({ error: 'studentId and subject are required.' });
     }
-    if (!examType || !EXAM_TYPES[examType]) {
-        return res.status(400).json({ error: 'Please select a valid exam (examType) to record a result for.' });
+    if (!examType) {
+        return res.status(400).json({ error: 'Please select an exam (examType) to record a result for.' });
     }
     try {
-        const maxScore = EXAM_TYPES[examType].maxScore;
+        // Validate the exam exists (admin-defined exams are supported)
+        const { rows: examRows } = await query(
+            `SELECT id FROM exams WHERE exam_key = $1 AND deleted_at IS NULL LIMIT 1`,
+            [examType]
+        );
+        if (examRows.length === 0 && !EXAM_TYPES[examType]) {
+            return res.status(400).json({ error: 'Please select a valid exam to record a result for.' });
+        }
+        const maxScore = await getExamMaxScore(examType);
         const parsedScore = Math.min(parseFloat(score) || 0, maxScore);
 
         // Delete any existing pending result for this student/subject/exam from this teacher

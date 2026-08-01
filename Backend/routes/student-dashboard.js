@@ -175,6 +175,43 @@ router.get('/:studentId', async (req, res) => {
             } catch (e) {}
         }
 
+        // 11. Exams assigned to the student's class (exam definitions)
+        let exams = [];
+        if (classInfo) {
+            try {
+                const { rows } = await query(`
+                    SELECT e.id, e.name, e.exam_key, e.max_score, e.sort_order
+                    FROM class_exams ce
+                    JOIN exams e ON ce.exam_id = e.id
+                    WHERE ce.class_id = $1 AND e.deleted_at IS NULL
+                    ORDER BY e.sort_order ASC, e.id ASC
+                `, [classInfo.id]);
+                exams = rows;
+            } catch (e) {}
+        }
+        // Fallback: if none assigned yet, return the full active exam list
+        if (exams.length === 0) {
+            try {
+                const { rows } = await query(
+                    `SELECT id, name, exam_key, max_score, sort_order FROM exams WHERE deleted_at IS NULL ORDER BY sort_order ASC`
+                );
+                exams = rows;
+            } catch (e) {}
+        }
+
+        // 12. Announcements for the student dashboard
+        let announcements = [];
+        try {
+            const { rows } = await query(
+                `SELECT id, title, message, audience, created_at
+                 FROM announcements
+                 WHERE deleted_at IS NULL AND (audience = 'all' OR audience = 'students')
+                 ORDER BY created_at DESC
+                 LIMIT 10`
+            );
+            announcements = rows;
+        } catch (e) {}
+
         // Build response
         res.json({
             student: {
@@ -191,6 +228,7 @@ router.get('/:studentId', async (req, res) => {
             results,
             resultsOnHold,
             releaseAt,
+            exams,
             attendance,
             attendanceHistory,
             class: classInfo,
@@ -198,7 +236,8 @@ router.get('/:studentId', async (req, res) => {
             fees,
             clearance,
             examSchedule,
-            timetable
+            timetable,
+            announcements
         });
     } catch (err) {
         res.status(500).json({ error: err.message });

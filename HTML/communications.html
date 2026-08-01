@@ -65,6 +65,8 @@
                             data-bs-target="#contact-inquiries-pane">Contact Form Inquiries</button></li>
                     <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
                             data-bs-target="#internal-messages-pane">Internal Messaging</button></li>
+                    <li class="nav-item" role="presentation"><button class="nav-link" data-bs-toggle="tab"
+                            data-bs-target="#announcements-pane">Announcements</button></li>
                 </ul>
                 <div class="tab-content" id="commTabsContent">
                     <!-- Tab for Contact Form Inquiries -->
@@ -100,6 +102,39 @@
                                         data-bs-target="#composeModal"><i class="fas fa-edit me-2"></i>Compose</button>
                                 </div>
                                 <div id="messages-list" class="p-3"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Tab for Announcements -->
+                    <div class="tab-pane fade" id="announcements-pane" role="tabpanel">
+                        <div class="row mt-3">
+                            <div class="col-lg-5">
+                                <div class="card">
+                                    <div class="card-header"><h6 class="m-0"><i class="fas fa-bullhorn me-2"></i>Send Announcement to All Students</h6></div>
+                                    <div class="card-body">
+                                        <form id="announcement-form">
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Title</label>
+                                                <input type="text" id="ann-title" class="form-control" required placeholder="e.g. Exam Results Released">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label fw-bold">Message</label>
+                                                <textarea id="ann-message" class="form-control" rows="4" required placeholder="Message students will see on their dashboard..."></textarea>
+                                            </div>
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-success"><i class="fas fa-paper-plane me-2"></i>Send to All Students</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-7">
+                                <div class="card">
+                                    <div class="card-header"><h6 class="m-0"><i class="fas fa-history me-2"></i>Sent Announcements</h6></div>
+                                    <div class="card-body" id="announcements-list" style="max-height:500px;overflow-y:auto;">
+                                        <div class="text-center text-muted py-4">Loading...</div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -281,9 +316,76 @@
                 } catch (error) { alert(`Error: ${error.message}`); }
             });
 
+            // --- SECTION 3: ANNOUNCEMENTS TO STUDENTS ---
+            const announcementForm = document.getElementById('announcement-form');
+            const announcementsList = document.getElementById('announcements-list');
+            const ANNOUNCEMENT_API_URL = '/api/announcements';
+
+            async function fetchAnnouncements() {
+                try {
+                    const response = await fetch(ANNOUNCEMENT_API_URL);
+                    const announcements = await response.json();
+                    renderAnnouncements(announcements);
+                } catch (error) { console.error('Error fetching announcements:', error); }
+            }
+
+            function renderAnnouncements(announcements) {
+                if (!announcementsList) return;
+                if (!announcements || announcements.length === 0) {
+                    announcementsList.innerHTML = `<div class="text-center text-muted py-4">No announcements sent yet.</div>`;
+                    return;
+                }
+                announcementsList.innerHTML = announcements.map(a => `
+                    <div class="card mb-2 shadow-sm">
+                        <div class="card-body py-2">
+                            <div class="d-flex justify-content-between align-items-start">
+                                <div>
+                                    <h6 class="mb-1 fw-bold">${a.title || 'Announcement'}</h6>
+                                    <p class="mb-1 text-muted" style="white-space:pre-wrap;">${a.message || ''}</p>
+                                    <small class="text-muted">${a.created_at || ''}${a.audience === 'all' ? '' : ' &middot; ' + (a.audience || '')}</small>
+                                </div>
+                                <button class="btn btn-sm btn-outline-danger btn-delete-ann" data-id="${a.id}" title="Delete"><i class="fas fa-trash"></i></button>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+                announcementsList.querySelectorAll('.btn-delete-ann').forEach(btn => {
+                    btn.addEventListener('click', async () => {
+                        if (!confirm('Delete this announcement?')) return;
+                        try {
+                            await fetch(`${ANNOUNCEMENT_API_URL}/${btn.dataset.id}`, { method: 'DELETE' });
+                            await fetchAnnouncements();
+                        } catch (error) { alert(`Error: ${error.message}`); }
+                    });
+                });
+            }
+
+            if (announcementForm) {
+                announcementForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const data = {
+                        title: document.getElementById('ann-title').value.trim(),
+                        message: document.getElementById('ann-message').value.trim(),
+                        audience: 'all'
+                    };
+                    try {
+                        const response = await fetch(ANNOUNCEMENT_API_URL, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(data)
+                        });
+                        if (!response.ok) throw new Error('Failed to send announcement');
+                        announcementForm.reset();
+                        await fetchAnnouncements();
+                        alert('Announcement sent to all students!');
+                    } catch (error) { alert(`Error: ${error.message}`); }
+                });
+            }
+
             // --- INITIAL LOAD ---
             fetchContactMessages();
             fetchInternalMessages();
+            fetchAnnouncements();
         });
 
 

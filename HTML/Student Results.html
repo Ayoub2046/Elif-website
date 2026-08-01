@@ -1713,12 +1713,6 @@
                         </div>
                         <select id="exam-type-select" class="form-select" style="max-width:280px;">
                             <option value="">All Exams (Overall Report)</option>
-                            <option value="quiz1">Quiz 1</option>
-                            <option value="quiz2">Quiz 2</option>
-                            <option value="sem1">Semester 1</option>
-                            <option value="sem2">Semester 2</option>
-                            <option value="midterm">Midterm</option>
-                            <option value="final">Final</option>
                         </select>
                     </div>
                 </div>
@@ -2370,6 +2364,7 @@
                 initTabs();
                 initBottomNav();
                 loadAnnouncements(data);
+                setupExamDefs(data);
                 loadResults(data, elpId);
                 loadAttendance(data);
                 loadExams(data);
@@ -2388,7 +2383,10 @@
             function loadAnnouncements(data) {
                 var container = document.getElementById('announcements-list');
                 var items = [];
-                items.push({ icon: 'fa-bullhorn', title: 'Welcome to Elif PU College', desc: 'Stay updated with your academic progress and schedules.' });
+                // Admin announcements (sent from the Admin panel)
+                (data.announcements || []).forEach(function (a) {
+                    items.push({ icon: 'fa-bullhorn', title: a.title || 'Announcement', desc: (a.message || '') + (a.created_at ? ' <small class="text-muted">' + formatDate(a.created_at) + '</small>' : '') });
+                });
                 var att = data.attendance || {};
                 if (att.percentage !== undefined && att.percentage < 75) {
                     items.push({ icon: 'fa-exclamation-triangle', title: 'Low Attendance Warning', desc: 'Your attendance is ' + att.percentage + '%. Please maintain at least 75%.' });
@@ -2441,7 +2439,7 @@
                 return colors[index % colors.length];
             }
 
-            // Exam definitions used for the report card
+            // Exam definitions used for the report card (dynamic — admin can change anytime)
             var EXAM_DEFS = [
                 { key: 'quiz1', label: 'Quiz 1', max: 5, barClass: 'q' },
                 { key: 'quiz2', label: 'Quiz 2', max: 5, barClass: 'q' },
@@ -2450,6 +2448,22 @@
                 { key: 'midterm', label: 'Midterm', max: 40, barClass: 'm' },
                 { key: 'final', label: 'Final', max: 40, barClass: 'f' }
             ];
+            var BAR_CLASSES = ['q', 'q', 's', 's', 'm', 'f'];
+
+            // Override EXAM_DEFS + dropdown from the exams the student's class is assigned
+            function setupExamDefs(data) {
+                var exams = (data && data.exams) || [];
+                if (!exams || exams.length === 0) return;
+                var defs = exams.map(function (e, i) {
+                    return { key: e.exam_key, label: e.name, max: parseFloat(e.max_score) || 100, barClass: BAR_CLASSES[i % BAR_CLASSES.length] };
+                });
+                EXAM_DEFS = defs;
+                var sel = document.getElementById('exam-type-select');
+                sel.innerHTML = '<option value="">All Exams (Overall Report)</option>';
+                defs.forEach(function (d) {
+                    sel.innerHTML += '<option value="' + d.key + '">' + d.label + ' (/' + d.max + ')</option>';
+                });
+            }
 
             function getExamDef(examType) {
                 return EXAM_DEFS.find(function (d) { return d.key === examType; }) || null;
