@@ -272,8 +272,12 @@ const { query } = require('./database');
         await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0`);
         await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true`);
         await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
+        // Make legacy per-class exam columns nullable so the shared exam list can be seeded
+        try { await query(`ALTER TABLE exams ALTER COLUMN class_id DROP NOT NULL`); } catch (e) {}
+        try { await query(`ALTER TABLE exams ALTER COLUMN class_id SET DEFAULT NULL`); } catch (e) {}
         await query(`
-            INSERT INTO exams (name, exam_key, max_score, sort_order) VALUES
+            INSERT INTO exams (name, exam_key, max_score, sort_order)
+            VALUES
                 ('Quiz 1', 'quiz1', 5, 1),
                 ('Quiz 2', 'quiz2', 5, 2),
                 ('Semester 1', 'sem1', 5, 3),
@@ -281,7 +285,7 @@ const { query } = require('./database');
                 ('Midterm', 'midterm', 40, 5),
                 ('Final', 'final', 40, 6)
             ON CONFLICT (exam_key) DO NOTHING
-        `);
+        `).catch(e => {});
         console.log('exams table ready.');
 
         // Create class_exams junction table (which exams are assigned to each class)
