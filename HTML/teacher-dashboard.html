@@ -803,7 +803,8 @@
             btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Submitting...';
             try {
                 const r = await fetch('/api/results/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records,teacherId:activeUser.id,teacherName:activeUser.name})});
-                const data = await r.json();
+                let data = null;
+                try { data = await r.json(); } catch (e) { throw new Error('Server error (HTTP ' + r.status + '). Please try again.'); }
                 if (!r.ok) throw new Error(data.error||'Failed');
                 submittedExamKeys.add(examType + '|' + subject);
                 $('results-alert').innerHTML = `<div class="alert alert-success alert-dismissible fade show">${data.message || 'Submitted for approval!'}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;

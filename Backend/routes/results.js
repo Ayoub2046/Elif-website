@@ -202,8 +202,9 @@ router.post('/batch', async (req, res) => {
     if (!records || !Array.isArray(records) || records.length === 0) {
         return res.status(400).json({ error: 'records array is required.' });
     }
-    const client = await pool.connect();
+    let client = null;
     try {
+        client = await pool.connect();
         await client.query('BEGIN');
         for (const rec of records) {
             const { studentId, subject, examType, score } = rec;
@@ -211,13 +212,14 @@ router.post('/batch', async (req, res) => {
                 throw new Error('studentId, subject and examType are required for every record.');
             }
             const { rows: examRows } = await client.query(
-                `SELECT id FROM exams WHERE exam_key = $1 AND deleted_at IS NULL LIMIT 1`,
+                `SELECT id, max_score FROM exams WHERE exam_key = $1 AND deleted_at IS NULL LIMIT 1`,
                 [examType]
             );
-            if (examRows.length === 0 && !EXAM_TYPES[examType]) {
+            const def = EXAM_TYPES[examType];
+            if (examRows.length === 0 && !def) {
                 throw new Error('Please select a valid exam to record a result for.');
             }
-            const maxScore = await getExamMaxScore(examType);
+            const maxScore = examRows[0] ? parseFloat(examRows[0].max_score) : (def ? def.maxScore : 100);
             const parsedScore = Math.min(parseFloat(score) || 0, maxScore);
 
             await client.query(
@@ -233,10 +235,10 @@ router.post('/batch', async (req, res) => {
         await client.query('COMMIT');
         res.status(201).json({ message: `${records.length} results submitted for approval.` });
     } catch (err) {
-        await client.query('ROLLBACK');
+        if (client) { try { await client.query('ROLLBACK'); } catch (e) {} }
         res.status(400).json({ error: err.message });
     } finally {
-        client.release();
+        if (client) client.release();
     }
 });
 
