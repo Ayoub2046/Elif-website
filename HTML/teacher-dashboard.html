@@ -332,6 +332,7 @@
                         <div class="td-card-h"><h5><i class="fas fa-edit"></i> Enter Exam Scores</h5>
                             <div class="d-flex gap-2 align-items-center flex-wrap">
                                 <select id="results-class-select" class="form-select form-select-sm" style="width:auto;"><option value="">Class</option></select>
+                                <select id="results-exam-select" class="form-select form-select-sm" style="width:auto;"><option value="">-- Select Exam --</option></select>
                                 <input type="text" id="results-subject" class="form-control form-control-sm" placeholder="Subject" style="width:130px;">
                                 <input type="date" id="results-date" class="form-control form-control-sm" style="width:140px;">
                                 <button id="load-results-students-btn" class="btn btn-primary btn-sm" disabled><i class="fas fa-sync"></i></button>
@@ -339,10 +340,11 @@
                                 <button id="upload-results-csv-trigger" class="btn btn-warning btn-sm"><i class="fas fa-upload me-1"></i>Import CSV</button>
                                 <input type="file" id="upload-results-csv-input" accept=".csv" style="display:none;">
                             </div>
+                            <div class="mt-2"><small class="text-muted"><i class="fas fa-info-circle me-1"></i>Select the exam you want to record a result for, then enter its score.</small></div>
                         </div>
                         <div class="td-card-b d-none" id="results-entry-card">
                             <div class="alert alert-info py-2 mb-2" style="font-size:0.8rem;"><i class="fas fa-info-circle me-1"></i> Scores go to admin for approval.</div>
-                            <div class="table-responsive"><table class="table table-hover mb-0" id="results-entry-table"><thead><tr><th rowspan="2">Student</th><th colspan="2" class="text-center" style="background:#0f510e;color:#fff;">Quiz</th><th colspan="2" class="text-center" style="background:#17a2b8;color:#fff;">Sem</th><th rowspan="2" class="text-center" style="background:#f39c12;">Mid</th><th rowspan="2" class="text-center" style="background:#e74c3c;color:#fff;">Final</th><th rowspan="2" class="text-center">Total</th></tr><tr><th class="text-center" style="background:#1b9e1b;color:#fff;">Q1</th><th class="text-center" style="background:#1b9e1b;color:#fff;">Q2</th><th class="text-center" style="background:#138496;color:#fff;">S1</th><th class="text-center" style="background:#138496;color:#fff;">S2</th></tr></thead><tbody id="results-table-body"></tbody></table></div>
+                            <div class="table-responsive"><table class="table table-hover mb-0" id="results-entry-table"><thead><tr><th rowspan="2">Student</th><th class="text-center" id="results-exam-th" style="background:#0f510e;color:#fff;">Exam</th><th rowspan="2" class="text-center">Total</th></tr></thead><tbody id="results-table-body"></tbody></table></div>
                             <div class="mt-2 text-end"><button id="submit-results-btn" class="btn btn-success btn-sm"><i class="fas fa-paper-plane me-1"></i> Submit for Approval</button></div>
                         </div>
                     </div>
@@ -414,7 +416,12 @@
 
         let teacherClasses = [], allStudents = [], currentAttendance = {}, currentResultsStudents = {};
         let trendChart = null;
-        const EXAM_TYPES = {quiz1:{max:5},quiz2:{max:5},sem1:{max:5},sem2:{max:5},midterm:{max:40},final:{max:40}};
+        const EXAM_TYPES = {quiz1:{max:5,label:'Quiz 1'},quiz2:{max:5,label:'Quiz 2'},sem1:{max:5,label:'Sem 1'},sem2:{max:5,label:'Sem 2'},midterm:{max:40,label:'Midterm'},final:{max:40,label:'Final'}};
+
+        // Populate exam selector
+        Object.entries(EXAM_TYPES).forEach(([key, et]) => {
+            $('results-exam-select').innerHTML += `<option value="${key}">${et.label} (/${et.max})</option>`;
+        });
 
         // === NAV ===
         $$('[data-section]').forEach(btn => btn.addEventListener('click', () => {
@@ -714,56 +721,59 @@
         // === RESULTS ===
         $('load-results-students-btn').addEventListener('click', loadResultsStudents);
         $('results-class-select').addEventListener('change', () => { if ($('results-class-select').value) loadResultsStudents(); });
+        $('results-exam-select').addEventListener('change', () => { if ($('results-class-select').value) loadResultsStudents(); });
 
         async function loadResultsStudents() {
             const classId = $('results-class-select').value;
+            const examType = $('results-exam-select').value;
             if (!classId) return;
+            if (!examType) {
+                $('results-alert').innerHTML = '<div class="alert alert-warning">Please select the exam you want to record a result for.</div>';
+                return;
+            }
             try {
                 const res = await fetch(`/api/classes/${classId}/students`);
                 const students = await res.json();
+                const et = EXAM_TYPES[examType];
                 $('results-entry-card').classList.remove('d-none');
+                $('results-exam-th').textContent = `${et.label} (/${et.max})`;
                 const tbody = $('results-table-body');
                 currentResultsStudents = {};
                 tbody.innerHTML = students.map(s => {
-                    currentResultsStudents[s.id] = {name:s.name,quiz1:0,quiz2:0,sem1:0,sem2:0,midterm:0,final:0};
+                    currentResultsStudents[s.id] = {name:s.name, score:0};
                     return `<tr data-student="${s.id}"><td><strong>ELP${String(250000+s.id).slice(-6)}</strong><br><small>${s.name}</small></td>
-                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="quiz1" style="width:58px;"></td>
-                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="quiz2" style="width:58px;"></td>
-                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="sem1" style="width:58px;"></td>
-                        <td><input type="number" min="0" max="5" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="sem2" style="width:58px;"></td>
-                        <td><input type="number" min="0" max="40" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="midterm" style="width:65px;"></td>
-                        <td><input type="number" min="0" max="40" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="final" style="width:65px;"></td>
+                        <td><input type="number" min="0" max="${et.max}" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="${examType}" style="width:90px;"></td>
                         <td class="fw-bold stot" data-sid="${s.id}" style="color:var(--primary-dark);">0</td>
                     </tr>`;
                 }).join('');
                 $$('.si').forEach(inp => inp.addEventListener('change', e => {
-                    const sid = e.target.dataset.sid, type = e.target.dataset.type, max = EXAM_TYPES[type].max;
+                    const sid = e.target.dataset.sid, max = EXAM_TYPES[examType].max;
                     let v = parseInt(e.target.value)||0; if(v>max){v=max;e.target.value=v;}
-                    currentResultsStudents[sid][type]=v;
-                    const d=currentResultsStudents[sid], tot=d.quiz1+d.quiz2+d.sem1+d.sem2+d.midterm+d.final;
-                    $$(`.stot[data-sid="${sid}"]`).forEach(el => {el.textContent=tot; el.className='fw-bold stot '+(tot>=60?'text-success':tot>=40?'text-warning':'text-danger');});
+                    if(v<0){v=0;e.target.value=0;}
+                    currentResultsStudents[sid].score=v;
+                    $$(`.stot[data-sid="${sid}"]`).forEach(el => {el.textContent=v; el.className='fw-bold stot '+(v>=Math.round(max*0.6)?'text-success':v>=Math.round(max*0.4)?'text-warning':'text-danger');});
                 }));
             } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
         }
 
         $('submit-results-btn').addEventListener('click', async () => {
             const subject = $('results-subject').value.trim();
+            const examType = $('results-exam-select').value;
+            if (!examType) { $('results-alert').innerHTML = '<div class="alert alert-warning">Please select the exam you want to record a result for.</div>'; return; }
             if (!subject) { $('results-alert').innerHTML = '<div class="alert alert-warning">Enter a subject.</div>'; return; }
-            const records = Object.entries(currentResultsStudents).map(([id,d]) => ({studentId:parseInt(id),subject,examScores:[
-                {examType:'quiz1',score:d.quiz1},{examType:'quiz2',score:d.quiz2},{examType:'sem1',score:d.sem1},
-                {examType:'sem2',score:d.sem2},{examType:'midterm',score:d.midterm},{examType:'final',score:d.final}]}));
+            const records = Object.entries(currentResultsStudents).map(([id,d]) => ({studentId:parseInt(id),subject,examType,score:d.score}));
             if (records.length===0) { $('results-alert').innerHTML = '<div class="alert alert-warning">No students.</div>'; return; }
             try {
                 for (const rec of records) {
                     const r = await fetch('/api/results',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...rec,teacherId:activeUser.id,teacherName:activeUser.name})});
                     if (!r.ok) { const e=await r.json(); throw new Error(e.error||'Failed'); }
                 }
-                $('results-alert').innerHTML = '<div class="alert alert-success alert-dismissible fade show">Submitted!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
+                $('results-alert').innerHTML = '<div class="alert alert-success alert-dismissible fade show">Submitted for approval!<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>';
                 loadSubmittedResults();
                 $('results-subject').value = '';
                 $$('.si').forEach(i=>i.value=0);
                 $$('.stot').forEach(el=>el.textContent='0');
-                Object.keys(currentResultsStudents).forEach(id => {currentResultsStudents[id]={...currentResultsStudents[id],quiz1:0,quiz2:0,sem1:0,sem2:0,midterm:0,final:0};});
+                Object.keys(currentResultsStudents).forEach(id => {currentResultsStudents[id].score=0;});
             } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
         });
 
@@ -802,11 +812,11 @@
                 const el = $('submitted-results-list');
                 if (results.length===0) { el.innerHTML = '<div class="p-3 text-center text-muted" style="font-size:0.85rem;">No results submitted.</div>'; return; }
                 const badge = {'pending':'bg-warning text-dark','approved':'bg-success','rejected':'bg-danger'};
+                const examLabel = {'quiz1':'Quiz 1','quiz2':'Quiz 2','sem1':'Sem 1','sem2':'Sem 2','midterm':'Midterm','final':'Final'};
                 const grouped = {};
-                results.forEach(r => { const k=r.student_id+'-'+r.subject; if(!grouped[k]) grouped[k]={name:r.studentName,subject:r.subject,status:r.approval_status,scores:{}}; grouped[k].scores[r.exam_type]=parseFloat(r.score); });
+                results.forEach(r => { const k=r.student_id+'-'+r.subject+'-'+r.exam_type; if(!grouped[k]) grouped[k]={name:r.studentName,subject:r.subject,exam_type:r.exam_type,status:r.approval_status,score:0}; grouped[k].score=parseFloat(r.score); });
                 el.innerHTML = Object.values(grouped).map(g => {
-                    const q=(g.scores.quiz1||0)+(g.scores.quiz2||0), se=(g.scores.sem1||0)+(g.scores.sem2||0), m=g.scores.midterm||0, f=g.scores.final||0;
-                    return `<div class="p-2 border-bottom" style="font-size:0.8rem;"><div class="fw-bold">${g.name}</div><div class="d-flex justify-content-between"><span>${g.subject} · ${q+se+m+f}/100</span><span class="badge ${badge[g.status]||'bg-secondary'}">${g.status}</span></div></div>`;
+                    return `<div class="p-2 border-bottom" style="font-size:0.8rem;"><div class="fw-bold">${g.name}</div><div class="d-flex justify-content-between"><span>${g.subject} · ${examLabel[g.exam_type]||g.exam_type} · ${g.score}/${EXAM_TYPES[g.exam_type]?.max||100}</span><span class="badge ${badge[g.status]||'bg-secondary'}">${g.status}</span></div></div>`;
                 }).join('');
             } catch(e) { console.error(e); }
         }

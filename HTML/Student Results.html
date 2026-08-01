@@ -1704,6 +1704,25 @@
                     </div>
                 </div>
 
+                <!-- Exam Selector -->
+                <div class="section-card no-print mb-3">
+                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="fas fa-file-alt text-success"></i>
+                            <label for="exam-type-select" class="fw-bold mb-0" style="font-size:0.9rem;">Select Exam:</label>
+                        </div>
+                        <select id="exam-type-select" class="form-select" style="max-width:280px;">
+                            <option value="">All Exams (Overall Report)</option>
+                            <option value="quiz1">Quiz 1</option>
+                            <option value="quiz2">Quiz 2</option>
+                            <option value="sem1">Semester 1</option>
+                            <option value="sem2">Semester 2</option>
+                            <option value="midterm">Midterm</option>
+                            <option value="final">Final</option>
+                        </select>
+                    </div>
+                </div>
+
                 <!-- Results Cards -->
                 <div id="results-cards-container" class="row g-3 mb-3"></div>
 
@@ -2422,6 +2441,37 @@
                 return colors[index % colors.length];
             }
 
+            // Exam definitions used for the report card
+            var EXAM_DEFS = [
+                { key: 'quiz1', label: 'Quiz 1', max: 5, barClass: 'q' },
+                { key: 'quiz2', label: 'Quiz 2', max: 5, barClass: 'q' },
+                { key: 'sem1', label: 'Sem 1', max: 5, barClass: 's' },
+                { key: 'sem2', label: 'Sem 2', max: 5, barClass: 's' },
+                { key: 'midterm', label: 'Midterm', max: 40, barClass: 'm' },
+                { key: 'final', label: 'Final', max: 40, barClass: 'f' }
+            ];
+
+            function getExamDef(examType) {
+                return EXAM_DEFS.find(function (d) { return d.key === examType; }) || null;
+            }
+
+            function scoreToGpaPoints(percentage) {
+                if (percentage >= 90) return 4.0;
+                if (percentage >= 80) return 3.0;
+                if (percentage >= 70) return 2.0;
+                if (percentage >= 60) return 1.0;
+                return 0.0;
+            }
+
+            function buildScoreRow(score, def) {
+                var pct = def.max > 0 ? Math.round((score / def.max) * 100) : 0;
+                return '<div class="rc-score-row">' +
+                    '<span class="rc-score-label">' + def.label + '</span>' +
+                    '<div class="rc-score-bar-wrap"><div class="rc-score-bar ' + def.barClass + '" style="width: ' + pct + '%;"></div></div>' +
+                    '<span class="rc-score-val">' + score + '<span class="rc-max">/' + def.max + '</span></span>' +
+                    '</div>';
+            }
+
             function loadResults(data, elpId) {
                 document.getElementById('rc-student-id').textContent = elpId;
                 document.getElementById('rc-student-name').textContent = data.student.name || 'N/A';
@@ -2449,6 +2499,9 @@
                 }
                 holdBanner.classList.add('d-none');
 
+                var examType = document.getElementById('exam-type-select').value;
+                var examDef = getExamDef(examType);
+
                 var results = data.results || {};
                 var subjects = Object.keys(results);
 
@@ -2468,15 +2521,35 @@
 
                 subjects.forEach(function (subject, index) {
                     var subjectData = results[subject];
-                    var scores = subjectData.scores || {};
-                    var subjectTotal = subjectData.total || 0;
-                    var subjectMax = subjectData.maxTotal || 100;
-                    var percentage = subjectMax > 0 ? Math.round((subjectTotal / subjectMax) * 100) : 0;
-                    var grade = getGradeBadge(percentage);
                     var color = getSubjectColor(index);
+
+                    var subjectTotal = 0;
+                    var subjectMax = 0;
+                    var rowsHtml = '';
+
+                    if (examDef) {
+                        // Single-exam view: show only the selected exam's score for this subject
+                        var sc = parseFloat(subjectData.scores[examType]) || 0;
+                        var mx = (subjectData.maxScores && subjectData.maxScores[examType]) ? parseFloat(subjectData.maxScores[examType]) : examDef.max;
+                        rowsHtml = buildScoreRow(sc, { key: examDef.key, label: examDef.label, max: mx, barClass: examDef.barClass });
+                        subjectTotal = sc;
+                        subjectMax = mx;
+                    } else {
+                        // Overall view: show every exam the subject has
+                        EXAM_DEFS.forEach(function (def) {
+                            var sc = parseFloat(subjectData.scores[def.key]) || 0;
+                            var mx = (subjectData.maxScores && subjectData.maxScores[def.key]) ? parseFloat(subjectData.maxScores[def.key]) : def.max;
+                            rowsHtml += buildScoreRow(sc, { key: def.key, label: def.label, max: mx, barClass: def.barClass });
+                            subjectTotal += sc;
+                            subjectMax += mx;
+                        });
+                    }
 
                     totalScore += subjectTotal;
                     totalMax += subjectMax;
+
+                    var percentage = subjectMax > 0 ? Math.round((subjectTotal / subjectMax) * 100) : 0;
+                    var grade = getGradeBadge(percentage);
 
                     html += '<div class="col-md-6 col-lg-4">';
                     html += '<div class="result-card">';
@@ -2487,55 +2560,7 @@
                     html += '</div>';
                     html += '</div>';
                     html += '<div class="rc-body">';
-
-                    html += '<div class="rc-score-row">';
-                    html += '<span class="rc-score-label">Quiz 1</span>';
-                    html += '<div class="rc-score-bar-wrap">';
-                    html += '<div class="rc-score-bar q" style="width: ' + ((scores.quiz1 || 0) / 5 * 100) + '%;"></div>';
-                    html += '</div>';
-                    html += '<span class="rc-score-val">' + (scores.quiz1 || 0) + '<span class="rc-max">/5</span></span>';
-                    html += '</div>';
-
-                    html += '<div class="rc-score-row">';
-                    html += '<span class="rc-score-label">Quiz 2</span>';
-                    html += '<div class="rc-score-bar-wrap">';
-                    html += '<div class="rc-score-bar q" style="width: ' + ((scores.quiz2 || 0) / 5 * 100) + '%;"></div>';
-                    html += '</div>';
-                    html += '<span class="rc-score-val">' + (scores.quiz2 || 0) + '<span class="rc-max">/5</span></span>';
-                    html += '</div>';
-
-                    html += '<div class="rc-score-row">';
-                    html += '<span class="rc-score-label">Sem 1</span>';
-                    html += '<div class="rc-score-bar-wrap">';
-                    html += '<div class="rc-score-bar s" style="width: ' + ((scores.sem1 || 0) / 5 * 100) + '%;"></div>';
-                    html += '</div>';
-                    html += '<span class="rc-score-val">' + (scores.sem1 || 0) + '<span class="rc-max">/5</span></span>';
-                    html += '</div>';
-
-                    html += '<div class="rc-score-row">';
-                    html += '<span class="rc-score-label">Sem 2</span>';
-                    html += '<div class="rc-score-bar-wrap">';
-                    html += '<div class="rc-score-bar s" style="width: ' + ((scores.sem2 || 0) / 5 * 100) + '%;"></div>';
-                    html += '</div>';
-                    html += '<span class="rc-score-val">' + (scores.sem2 || 0) + '<span class="rc-max">/5</span></span>';
-                    html += '</div>';
-
-                    html += '<div class="rc-score-row">';
-                    html += '<span class="rc-score-label">Midterm</span>';
-                    html += '<div class="rc-score-bar-wrap">';
-                    html += '<div class="rc-score-bar m" style="width: ' + ((scores.midterm || 0) / 40 * 100) + '%;"></div>';
-                    html += '</div>';
-                    html += '<span class="rc-score-val">' + (scores.midterm || 0) + '<span class="rc-max">/40</span></span>';
-                    html += '</div>';
-
-                    html += '<div class="rc-score-row">';
-                    html += '<span class="rc-score-label">Final</span>';
-                    html += '<div class="rc-score-bar-wrap">';
-                    html += '<div class="rc-score-bar f" style="width: ' + ((scores.final || 0) / 40 * 100) + '%;"></div>';
-                    html += '</div>';
-                    html += '<span class="rc-score-val">' + (scores.final || 0) + '<span class="rc-max">/40</span></span>';
-                    html += '</div>';
-
+                    html += rowsHtml;
                     html += '</div>';
                     html += '<div class="rc-footer">';
                     html += '<div class="rc-total">' + subjectTotal + '<span class="rc-total-max">/' + subjectMax + '</span></div>';
@@ -2548,9 +2573,24 @@
                 container.innerHTML = html;
 
                 var overallPercentage = totalMax > 0 ? Math.round((totalScore / totalMax) * 100) : 0;
+
+                // GPA: per-exam GPA from selected exam scores, otherwise the student's stored overall GPA
+                var gpa = data.student.gpa || 'N/A';
+                if (examDef) {
+                    var points = [];
+                    subjects.forEach(function (subject) {
+                        var sd = results[subject];
+                        var sc = parseFloat(sd.scores[examType]) || 0;
+                        var mx = (sd.maxScores && sd.maxScores[examType]) ? parseFloat(sd.maxScores[examType]) : examDef.max;
+                        var pct = mx > 0 ? (sc / mx) * 100 : 0;
+                        points.push(scoreToGpaPoints(pct));
+                    });
+                    if (points.length > 0) gpa = (points.reduce(function (a, b) { return a + b; }, 0) / points.length).toFixed(2);
+                }
+
                 document.getElementById('summary-subjects').textContent = subjects.length;
                 document.getElementById('summary-average').textContent = overallPercentage + '%';
-                document.getElementById('summary-gpa').textContent = data.student.gpa || 'N/A';
+                document.getElementById('summary-gpa').textContent = gpa;
 
                 var warningEl = document.getElementById('results-clearance-warning');
                 if (data.clearance && data.clearance.isCleared === false) {
@@ -3189,6 +3229,15 @@
                 a.click();
                 URL.revokeObjectURL(url);
             };
+
+            // ========== EXAM SELECTOR ==========
+
+            document.getElementById('exam-type-select').addEventListener('change', function () {
+                if (!dashboardData) return;
+                var stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+                var elpId = stored ? stored.elpId : 'ELP' + (250000 + dashboardData.student.id);
+                loadResults(dashboardData, elpId);
+            });
 
             // ========== CHECK STORED SESSION ==========
 

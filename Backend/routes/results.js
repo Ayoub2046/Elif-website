@@ -25,9 +25,11 @@ router.get('/exam-types/definitions', (req, res) => {
 });
 
 // GET approved results for a specific student (for student/parent view)
+// Optional ?examType= filter returns results for a single exam only
 router.get('/:studentId', async (req, res) => {
     const studentId = parseInt(req.params.studentId);
     if (isNaN(studentId)) return res.status(400).json({ error: 'Invalid student ID' });
+    const examType = req.query.examType || null;
     try {
         const { rows: studentRows } = await query(`SELECT * FROM students WHERE id = $1`, [studentId]);
         const student = studentRows[0];
@@ -37,10 +39,15 @@ router.get('/:studentId', async (req, res) => {
 
         let subjects = [];
         try {
-            const subjectsRes = await query(
-                `SELECT subject, score, exam_type FROM results WHERE student_id = $1 AND approval_status = 'approved'`,
-                [studentId]
-            );
+            const subjectsRes = examType
+                ? await query(
+                    `SELECT subject, score, exam_type FROM results WHERE student_id = $1 AND approval_status = 'approved' AND exam_type = $2`,
+                    [studentId, examType]
+                )
+                : await query(
+                    `SELECT subject, score, exam_type FROM results WHERE student_id = $1 AND approval_status = 'approved'`,
+                    [studentId]
+                );
             subjects = subjectsRes.rows;
         } catch (e) { }
 
@@ -127,32 +134,33 @@ router.get('/teacher/:teacherId', async (req, res) => {
     }
 });
 
-// POST (submit) results from teacher (status = pending)
+// POST (submit) a result from teacher (status = pending)
+// Teacher must select which exam (examType) they are recording a result for
 router.post('/', async (req, res) => {
-    const { studentId, subject, examScores, teacherId, teacherName } = req.body;
-    if (!studentId || !subject || !examScores || !Array.isArray(examScores)) {
-        return res.status(400).json({ error: 'studentId, subject, and examScores array are required.' });
+    const { studentId, subject, examType, score, teacherId, teacherName } = req.body;
+    if (!studentId || !subject) {
+        return res.status(400).json({ error: 'studentId and subject are required.' });
+    }
+    if (!examType || !EXAM_TYPES[examType]) {
+        return res.status(400).json({ error: 'Please select a valid exam (examType) to record a result for.' });
     }
     try {
-        // Delete any existing pending results for this student/subject from this teacher
+        const maxScore = EXAM_TYPES[examType].maxScore;
+        const parsedScore = Math.min(parseFloat(score) || 0, maxScore);
+
+        // Delete any existing pending result for this student/subject/exam from this teacher
         await query(
-            `DELETE FROM results WHERE student_id = $1 AND subject = $2 AND submitted_by = $3 AND approval_status = 'pending'`,
-            [studentId, subject, teacherName || `Teacher-${teacherId}`]
+            `DELETE FROM results WHERE student_id = $1 AND subject = $2 AND exam_type = $3 AND submitted_by = $4 AND approval_status = 'pending'`,
+            [studentId, subject, examType, teacherName || `Teacher-${teacherId}`]
         );
 
-        // Insert new results with pending status
-        for (const item of examScores) {
-            const examType = item.examType;
-            const maxScore = EXAM_TYPES[examType]?.maxScore || 100;
-            const score = Math.min(parseFloat(item.score) || 0, maxScore);
-
-            await query(
-                `INSERT INTO results (student_id, subject, score, exam_type, max_score, approval_status, submitted_by, submitted_at)
-                 VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW())`,
-                [studentId, subject, score, examType, maxScore, teacherName || `Teacher-${teacherId}`]
-            );
-        }
-        res.status(201).json({ message: 'Results submitted for approval.' });
+        // Insert new result with pending status
+        await query(
+            `INSERT INTO results (student_id, subject, score, exam_type, max_score, approval_status, submitted_by, submitted_at)
+             VALUES ($1, $2, $3, $4, $5, 'pending', $6, NOW())`,
+            [studentId, subject, parsedScore, examType, maxScore, teacherName || `Teacher-${teacherId}`]
+        );
+        res.status(201).json({ message: 'Result submitted for approval.' });
     } catch (err) {
         res.status(400).json({ error: err.message });
     }
