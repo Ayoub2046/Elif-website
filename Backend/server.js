@@ -267,6 +267,11 @@ const { query } = require('./database');
             )
         `);
         // Seed the standard exams if the table is empty
+        await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS exam_key TEXT UNIQUE`);
+        await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_score NUMERIC(5,2) DEFAULT 100`);
+        await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0`);
+        await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true`);
+        await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
         await query(`
             INSERT INTO exams (name, exam_key, max_score, sort_order) VALUES
                 ('Quiz 1', 'quiz1', 5, 1),

@@ -26,6 +26,11 @@ async function ensureTables() {
             deleted_at TIMESTAMP
         )
     `);
+    await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS exam_key TEXT UNIQUE`);
+    await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS max_score NUMERIC(5,2) DEFAULT 100`);
+    await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 0`);
+    await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS active BOOLEAN DEFAULT true`);
+    await query(`ALTER TABLE exams ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP`);
     await query(`
         CREATE TABLE IF NOT EXISTS class_exams (
             class_id INTEGER REFERENCES classes(id) ON DELETE CASCADE,
