@@ -4,7 +4,7 @@ const express = require('express');
 const multer = require('multer');
 const { parse } = require('csv-parse/sync');
 const { stringify } = require('csv-stringify/sync');
-const { query } = require('../database.js');
+const { query, pool } = require('../database.js');
 const router = express.Router();
 
 const upload = multer({ storage: multer.memoryStorage() });
