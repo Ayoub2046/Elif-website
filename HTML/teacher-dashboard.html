@@ -429,6 +429,8 @@
             try {
                 const res = await fetch(url);
                 const exams = await res.json();
+                if (!res.ok) throw new Error(exams.error || 'Failed to load exams');
+                if (!Array.isArray(exams)) throw new Error('Unexpected response from server');
                 const active = exams.filter(e => e.active !== false);
                 examDefs = {};
                 active.forEach(e => { examDefs[e.exam_key] = { label: e.name, max: parseFloat(e.max_score) || 100, id: e.id }; });
