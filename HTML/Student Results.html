@@ -1512,6 +1512,9 @@
                     <p class="greeting-date" id="header-date"></p>
                 </div>
                 <div class="header-icons">
+                    <button class="header-icon-btn d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#studentNavOffcanvas" aria-controls="studentNavOffcanvas" title="Navigation Menu">
+                        <i class="fas fa-bars"></i>
+                    </button>
                     <button class="header-icon-btn" title="Search" onclick="toggleSearch()">
                         <i class="fas fa-search" id="searchIcon"></i>
                     </button>
@@ -2057,6 +2060,78 @@
         </div>
     </div>
 
+    <!-- Student Mobile Offcanvas Navigation Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="studentNavOffcanvas" aria-labelledby="studentNavOffcanvasLabel" style="max-width:280px;">
+        <div class="offcanvas-header text-white" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary-light));">
+            <h5 class="offcanvas-title fw-bold" id="studentNavOffcanvasLabel"><i class="fas fa-graduation-cap me-2"></i>Student Portal</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="list-group list-group-flush">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('results'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-poll text-success fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Exam Results & Honor Roll</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('timetable'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-clock text-primary fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Timetable & Classes</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('exams'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-file-alt text-warning fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Exam Schedule</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('attendance'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-user-check text-info fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Attendance Record</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('analytics'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-chart-pie fs-5" style="width:24px;color:#7c3aed;"></i>
+                    <span class="fw-semibold">Academic Analytics</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="openDigitalId(); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-id-card text-danger fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Digital ID Card</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('clearance'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-check-circle text-success fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Exam Clearance</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('subjects'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                    <i class="fas fa-book-open text-secondary fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Registered Subjects</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3 text-danger" onclick="document.getElementById('btn-logout').click();">
+                    <i class="fas fa-sign-out-alt fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Sign Out</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Bottom Navigation Bar -->
+    <nav class="bottom-nav d-none" id="bottom-nav">
+        <button type="button" class="nav-item active" data-bottom-tab="home">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </button>
+        <button type="button" class="nav-item" data-bottom-tab="results">
+            <i class="fas fa-poll"></i>
+            <span>Results</span>
+        </button>
+        <button type="button" class="nav-item" data-bottom-tab="attendance">
+            <i class="fas fa-user-check"></i>
+            <span>Attendance</span>
+        </button>
+        <button type="button" class="nav-item" data-bottom-tab="exams">
+            <i class="fas fa-file-alt"></i>
+            <span>Exams</span>
+        </button>
+        <button type="button" class="nav-item" data-bottom-tab="more">
+            <i class="fas fa-th-large"></i>
+            <span>More</span>
+        </button>
+    </nav>
+
     <!-- Loading Overlay -->
     <div id="loading-overlay" class="loading-overlay d-none">
         <div class="spinner-border mb-3" role="status"></div>
@@ -2201,6 +2276,7 @@
             // ========== BOTTOM NAV ==========
 
             function initBottomNav() {
+                if (!bottomNav) return;
                 bottomNav.classList.remove('d-none');
                 var navItems = bottomNav.querySelectorAll('.nav-item');
                 navItems.forEach(function (item) {
@@ -2217,16 +2293,11 @@
                             if (firstTab) firstTab.classList.add('active');
                             if (resultsPane) resultsPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         } else if (tab === 'more') {
-                            var panes = document.querySelectorAll('.tab-pane-content');
-                            panes.forEach(function (p) { p.classList.add('d-none'); });
-                            var subjectsPane = document.getElementById('tab-subjects');
-                            subjectsPane.classList.remove('d-none');
-                            var subjectTab = document.querySelector('#dashboard-tabs .nav-link[data-tab="subjects"]');
-                            if (subjectTab) {
-                                document.querySelectorAll('#dashboard-tabs .nav-link').forEach(function (b) { b.classList.remove('active'); });
-                                subjectTab.classList.add('active');
+                            var offEl = document.getElementById('studentNavOffcanvas');
+                            if (offEl) {
+                                var oc = bootstrap.Offcanvas.getInstance(offEl) || new bootstrap.Offcanvas(offEl);
+                                oc.toggle();
                             }
-                            if (subjectsPane) subjectsPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         } else {
                             if (tab === 'analytics') {
                                 switchToTab('analytics');
@@ -2357,7 +2428,7 @@
                 }
                 dashboardView.classList.add('d-none');
                 loginView.classList.remove('d-none');
-                bottomNav.classList.add('d-none');
+                if (bottomNav) bottomNav.classList.add('d-none');
                 loginForm.reset();
                 loginAlert.innerHTML = '';
             });
@@ -2368,7 +2439,7 @@
                 dashboardData = data;
                 loginView.classList.add('d-none');
                 dashboardView.classList.remove('d-none');
-                bottomNav.classList.remove('d-none');
+                if (bottomNav) bottomNav.classList.remove('d-none');
 
                 var stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
                 var elpId = stored ? stored.elpId : 'ELP' + (250000 + data.student.id);

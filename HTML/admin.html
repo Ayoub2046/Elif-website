@@ -588,31 +588,6 @@ body[data-theme="dark"] .dashboard-card .card-header .form-control::placeholder 
 document.addEventListener('DOMContentLoaded', () => {
     if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') { window.location.href = 'admin-login.html'; return; }
 
-    // --- Mobile Sidebar Toggle & Backdrop ---
-    const sidebarToggler = document.getElementById('sidebar-toggler');
-    const sidebar = document.querySelector('.sidebar');
-    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
-    if (sidebarToggler && sidebar) {
-        sidebarToggler.addEventListener('click', () => {
-            sidebar.classList.toggle('toggled');
-            if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active');
-        });
-    }
-    if (sidebarBackdrop && sidebar) {
-        sidebarBackdrop.addEventListener('click', () => {
-            sidebar.classList.remove('toggled');
-            sidebarBackdrop.classList.remove('active');
-        });
-    }
-    document.querySelectorAll('.sidebar-nav a').forEach(link => {
-        link.addEventListener('click', () => {
-            if (window.innerWidth < 992 && sidebar) {
-                sidebar.classList.remove('toggled');
-                if (sidebarBackdrop) sidebarBackdrop.classList.remove('active');
-            }
-        });
-    });
-
     const searchInput = document.getElementById('directory-search');
     let allStudents = [];
     let charts = {};

@@ -7,15 +7,14 @@ const { Pool } = require('pg');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 10,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 15000,
-    keepAlive: true,
-    keepAliveInitialDelayMillis: 10000
+    max: 4, // Keep well below Supabase 15-client session mode limit
+    idleTimeoutMillis: 3000, // Quickly return idle clients to Supabase
+    connectionTimeoutMillis: 10000,
+    allowExitOnIdle: true
 });
 
 pool.on('error', (err) => {
-    console.warn('Supabase pool idle client warning:', err.message);
+    console.warn('Supabase pool idle client notice:', err.message);
 });
 
 pool.connect((err, client, release) => {
@@ -27,15 +26,23 @@ pool.connect((err, client, release) => {
     }
 });
 
-// Robust query helper with automatic single retry on dropped connection
-const query = async (text, params) => {
+// Robust query helper with automatic exponential retry on dropped connection or EMAXCONNSESSION
+const query = async (text, params, retryCount = 0) => {
     try {
         return await pool.query(text, params);
     } catch (err) {
         const msg = String(err.message || '');
-        if (msg.includes('terminated') || msg.includes('timeout') || msg.includes('closed') || msg.includes('ECONNRESET')) {
-            console.warn('Re-executing query after transient pool disconnection...');
-            return await pool.query(text, params);
+        const isTransient = msg.includes('terminated') ||
+                            msg.includes('timeout') ||
+                            msg.includes('closed') ||
+                            msg.includes('ECONNRESET') ||
+                            msg.includes('EMAXCONNSESSION') ||
+                            msg.includes('max clients reached');
+        if (isTransient && retryCount < 3) {
+            const delay = (retryCount + 1) * 400;
+            console.warn(`Supabase pool notice: ${msg}. Retrying query in ${delay}ms (attempt ${retryCount + 1}/3)...`);
+            await new Promise(r => setTimeout(r, delay));
+            return await query(text, params, retryCount + 1);
         }
         throw err;
     }

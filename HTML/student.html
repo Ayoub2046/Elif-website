@@ -386,15 +386,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     
     // --- START: COMMON CODE FOR ALL ADMIN PAGES ---
-
-    // 1. Responsive Sidebar Toggler Functionality
-    const sidebar = document.querySelector('.sidebar');
-    const sidebarToggler = document.getElementById('sidebar-toggler');
-    if (sidebarToggler) {
-        sidebarToggler.addEventListener('click', () => {
-            sidebar.classList.toggle('toggled');
-        });
-    }
+    // (Sidebar toggling handled cleanly by /HTML/js/admin.js)
 
     // 2. Security & Logout
     if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') {
@@ -439,6 +431,7 @@ function toggleTheme() {
 })();
     </script>
 
+    <script src="/HTML/js/admin.js"></script>
     <script src="/JS/pwa.js"></script>
 </body>
 

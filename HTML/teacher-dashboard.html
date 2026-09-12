@@ -239,11 +239,50 @@
                 <p id="teacher-subject"></p>
             </div>
             <div class="td-header-right">
+                <button id="teacher-menu-toggle" class="btn btn-outline-light btn-sm d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#teacherNavOffcanvas" aria-controls="teacherNavOffcanvas" title="Toggle Navigation">
+                    <i class="fas fa-bars"></i>
+                </button>
                 <span style="font-size:0.78rem;opacity:0.7;" id="header-date"></span>
                 <div class="theme-toggle" onclick="toggleTheme()" style="cursor:pointer;">
                     <i class="fas fa-moon theme-toggle-icon" id="themeIcon"></i>
                 </div>
                 <button id="logout-btn" class="btn btn-light"><i class="fas fa-sign-out-alt me-2"></i>Logout</button>
+            </div>
+        </div>
+
+        <!-- Teacher Mobile Offcanvas Drawer Menu -->
+        <div class="offcanvas offcanvas-start" tabindex="-1" id="teacherNavOffcanvas" aria-labelledby="teacherNavOffcanvasLabel" style="max-width:280px;">
+            <div class="offcanvas-header text-white" style="background:linear-gradient(135deg,#0f510e,#1b9e1b);">
+                <h5 class="offcanvas-title fw-bold" id="teacherNavOffcanvasLabel"><i class="fas fa-chalkboard-teacher me-2"></i>Teacher Menu</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            </div>
+            <div class="offcanvas-body p-0">
+                <div class="list-group list-group-flush">
+                    <button type="button" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="document.querySelector('.td-nav-btn[data-section=overview]').click(); bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                        <i class="fas fa-home text-success fs-5" style="width:24px;"></i>
+                        <span class="fw-semibold">Overview & Stats</span>
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="document.querySelector('.td-nav-btn[data-section=attendance]').click(); bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                        <i class="fas fa-user-check text-primary fs-5" style="width:24px;"></i>
+                        <span class="fw-semibold">Attendance</span>
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="document.querySelector('.td-nav-btn[data-section=students]').click(); bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                        <i class="fas fa-users text-info fs-5" style="width:24px;"></i>
+                        <span class="fw-semibold">Students Directory</span>
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="document.querySelector('.td-nav-btn[data-section=results]').click(); bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                        <i class="fas fa-file-alt text-warning fs-5" style="width:24px;"></i>
+                        <span class="fw-semibold">Record Exam Results</span>
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="document.querySelector('.td-nav-btn[data-section=timetable]').click(); bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                        <i class="fas fa-calendar-week text-secondary fs-5" style="width:24px;"></i>
+                        <span class="fw-semibold">Schedule & Timetable</span>
+                    </button>
+                    <button type="button" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3 text-danger" onclick="document.getElementById('logout-btn').click();">
+                        <i class="fas fa-sign-out-alt fs-5" style="width:24px;"></i>
+                        <span class="fw-semibold">Logout</span>
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -1178,6 +1217,7 @@
     (function() { const s=localStorage.getItem('elif-theme')||'light'; document.body.setAttribute('data-theme',s); document.getElementById('themeIcon').className=s==='dark'?'fas fa-sun':'fas fa-moon'; })();
     </script>
 
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script src="/JS/pwa.js"></script>
 </body>
 </html>

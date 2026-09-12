@@ -3,18 +3,28 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Global Sidebar Toggle Logic for all Admin Pages ---
     const sidebar = document.querySelector('.sidebar');
     const sidebarToggler = document.getElementById('sidebar-toggler');
-    const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+    let sidebarBackdrop = document.getElementById('sidebar-backdrop');
 
-    // Only run this code if a sidebar and a toggler button exist on the page
-    if (sidebar && sidebarToggler) {
-        sidebarToggler.addEventListener('click', () => {
-            // This adds or removes the 'toggled' class, which our CSS uses to show/hide the menu
+    // Dynamically insert backdrop if it does not exist in DOM
+    if (!sidebarBackdrop && sidebar) {
+        sidebarBackdrop = document.createElement('div');
+        sidebarBackdrop.id = 'sidebar-backdrop';
+        sidebarBackdrop.className = 'sidebar-backdrop';
+        document.body.appendChild(sidebarBackdrop);
+    }
+
+    // Only run if sidebar and toggler button exist, preventing duplicate event listeners
+    if (sidebar && sidebarToggler && !sidebarToggler.dataset.sbBound) {
+        sidebarToggler.dataset.sbBound = 'true';
+        sidebarToggler.addEventListener('click', (e) => {
+            e.stopPropagation();
             sidebar.classList.toggle('toggled');
             if (sidebarBackdrop) sidebarBackdrop.classList.toggle('active');
         });
     }
 
-    if (sidebar && sidebarBackdrop) {
+    if (sidebar && sidebarBackdrop && !sidebarBackdrop.dataset.sbBound) {
+        sidebarBackdrop.dataset.sbBound = 'true';
         sidebarBackdrop.addEventListener('click', () => {
             sidebar.classList.remove('toggled');
             sidebarBackdrop.classList.remove('active');
