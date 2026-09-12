@@ -7,10 +7,15 @@ const { Pool } = require('pg');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 3,
-    idleTimeoutMillis: 3000,
-    connectionTimeoutMillis: 5000,
-    maxUses: 200
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 15000,
+    keepAlive: true,
+    keepAliveInitialDelayMillis: 10000
+});
+
+pool.on('error', (err) => {
+    console.warn('Supabase pool idle client warning:', err.message);
 });
 
 pool.connect((err, client, release) => {
@@ -22,7 +27,18 @@ pool.connect((err, client, release) => {
     }
 });
 
-// Helper: run a query
-const query = (text, params) => pool.query(text, params);
+// Robust query helper with automatic single retry on dropped connection
+const query = async (text, params) => {
+    try {
+        return await pool.query(text, params);
+    } catch (err) {
+        const msg = String(err.message || '');
+        if (msg.includes('terminated') || msg.includes('timeout') || msg.includes('closed') || msg.includes('ECONNRESET')) {
+            console.warn('Re-executing query after transient pool disconnection...');
+            return await pool.query(text, params);
+        }
+        throw err;
+    }
+};
 
 module.exports = { query, pool };

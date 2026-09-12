@@ -212,6 +212,44 @@ router.get('/:studentId', async (req, res) => {
             announcements = rows;
         } catch (e) {}
 
+        // 13. Top 3 Class Leaders in the student's class
+        let classLeaders = [];
+        if (classInfo && !resultsOnHold) {
+            try {
+                const { rows: leaderRows } = await query(`
+                    SELECT s.id AS student_id, s.name, s.image, s.grade, s.gpa,
+                           COALESCE(SUM(r.score), 0) AS total_score,
+                           COALESCE(AVG(r.score), 0) AS avg_score,
+                           COALESCE(SUM(COALESCE(r.max_score, 100)), 0) AS total_max,
+                           COUNT(r.id) AS subject_count
+                    FROM students s
+                    JOIN results r ON r.student_id = s.id
+                    WHERE (s.classid = $1 OR s.id IN (SELECT student_id FROM class_students WHERE class_id = $1))
+                      AND s.deleted_at IS NULL
+                      AND r.approval_status = 'approved'
+                      AND r.deleted_at IS NULL
+                    GROUP BY s.id, s.name, s.image, s.grade, s.gpa
+                    HAVING COUNT(r.id) > 0
+                    ORDER BY total_score DESC, avg_score DESC
+                    LIMIT 3
+                `, [classInfo.id]);
+                classLeaders = leaderRows.map((r, idx) => ({
+                    rank: idx + 1,
+                    studentId: r.student_id,
+                    elpId: `ELP${String(250000 + r.student_id).slice(-6)}`,
+                    name: r.name,
+                    image: r.image,
+                    grade: r.grade || 'A',
+                    gpa: r.gpa,
+                    totalScore: parseFloat(r.total_score).toFixed(1).replace(/\.0$/, ''),
+                    totalMax: parseFloat(r.total_max).toFixed(1).replace(/\.0$/, ''),
+                    avgScore: (parseFloat(r.avg_score) || 0).toFixed(1),
+                    percentage: r.total_max > 0 ? Math.round((r.total_score / r.total_max) * 100) : 0,
+                    subjectCount: parseInt(r.subject_count) || 0
+                }));
+            } catch (e) {}
+        }
+
         // Build response
         res.json({
             student: {
@@ -229,6 +267,7 @@ router.get('/:studentId', async (req, res) => {
             resultsOnHold,
             releaseAt,
             exams,
+            classLeaders,
             attendance,
             attendanceHistory,
             class: classInfo,

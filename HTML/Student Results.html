@@ -30,7 +30,7 @@
 
         body {
             background: #f0f2f5;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             min-height: 100vh;
             margin: 0;
             padding-bottom: 70px;
@@ -1704,16 +1704,50 @@
                     </div>
                 </div>
 
-                <!-- Exam Selector -->
-                <div class="section-card no-print mb-3">
-                    <div class="d-flex align-items-center gap-2 flex-wrap">
+                <!-- Exam Selector & Navigation -->
+                <div class="section-card no-print mb-3 p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                         <div class="d-flex align-items-center gap-2">
-                            <i class="fas fa-file-alt text-success"></i>
-                            <label for="exam-type-select" class="fw-bold mb-0" style="font-size:0.9rem;">Select Exam:</label>
+                            <span class="badge bg-success-subtle text-success p-2 rounded-circle"><i class="fas fa-medal fs-6"></i></span>
+                            <div>
+                                <h6 class="fw-bold mb-0 text-dark">Select Academic Term / Examination</h6>
+                                <small class="text-muted">Choose an exam to see your marks and class leaders</small>
+                            </div>
                         </div>
-                        <select id="exam-type-select" class="form-select" style="max-width:280px;">
-                            <option value="">All Exams (Overall Report)</option>
-                        </select>
+                        <div class="d-flex align-items-center gap-2">
+                            <select id="exam-type-select" class="form-select form-select-sm" style="min-width:210px;">
+                                <option value="">All Exams (Overall Report)</option>
+                            </select>
+                        </div>
+                    </div>
+                    <!-- Quick Pill Chips Navigation for Exams -->
+                    <div class="exam-chips-scroll mt-2" id="exam-chips-container">
+                        <button class="exam-chip-btn active" data-exam=""><i class="fas fa-layer-group"></i> All Exams <span class="chip-badge">Overall</span></button>
+                    </div>
+                </div>
+
+                <!-- TOP 3 CLASS LEADERS PODIUM SHOWCASE -->
+                <div class="class-leaders-card mb-4" id="class-leaders-section">
+                    <div class="leaders-header">
+                        <div class="leaders-title-group">
+                            <h4><i class="fas fa-trophy text-warning"></i> Class Honor Roll — Top 3 Leaders</h4>
+                            <p id="leaders-subtitle">Class standings for published examination results</p>
+                        </div>
+                        <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-bold" id="leaders-exam-badge">
+                            <i class="fas fa-check-circle me-1"></i> Officially Published
+                        </span>
+                    </div>
+
+                    <!-- Podium Container -->
+                    <div id="podium-display" class="podium-grid">
+                        <!-- Populated dynamically by JavaScript -->
+                    </div>
+
+                    <!-- Hold / Unpublished State Message -->
+                    <div id="leaders-unreleased" class="text-center py-4 d-none">
+                        <div class="mb-2" style="font-size:2.2rem;opacity:0.6;"><i class="fas fa-hourglass-half text-warning"></i></div>
+                        <h6 class="fw-bold text-dark">Class Rankings Pending Verification</h6>
+                        <p class="text-muted small mb-0">Official class rankings will be revealed once all subject marks for this examination are approved and published by administration.</p>
                     </div>
                 </div>
 
@@ -2450,7 +2484,7 @@
             ];
             var BAR_CLASSES = ['q', 'q', 's', 's', 'm', 'f'];
 
-            // Override EXAM_DEFS + dropdown from the exams the student's class is assigned
+            // Override EXAM_DEFS + dropdown + interactive chips from the exams the student's class is assigned
             function setupExamDefs(data) {
                 var exams = (data && data.exams) || [];
                 if (!exams || exams.length === 0) return;
@@ -2459,10 +2493,133 @@
                 });
                 EXAM_DEFS = defs;
                 var sel = document.getElementById('exam-type-select');
+                var chipsWrap = document.getElementById('exam-chips-container');
                 sel.innerHTML = '<option value="">All Exams (Overall Report)</option>';
+                if (chipsWrap) {
+                    chipsWrap.innerHTML = '<button type="button" class="exam-chip-btn active" data-exam=""><i class="fas fa-layer-group"></i> All Exams <span class="chip-badge">Overall</span></button>';
+                }
                 defs.forEach(function (d) {
                     sel.innerHTML += '<option value="' + d.key + '">' + d.label + ' (/' + d.max + ')</option>';
+                    if (chipsWrap) {
+                        chipsWrap.innerHTML += '<button type="button" class="exam-chip-btn" data-exam="' + d.key + '"><i class="fas fa-pen-nib"></i> ' + d.label + ' <span class="chip-badge">/' + d.max + '</span></button>';
+                    }
                 });
+
+                // Attach click listeners to chips
+                if (chipsWrap) {
+                    chipsWrap.querySelectorAll('.exam-chip-btn').forEach(function (btn) {
+                        btn.addEventListener('click', function () {
+                            chipsWrap.querySelectorAll('.exam-chip-btn').forEach(function (b) { b.classList.remove('active'); });
+                            btn.classList.add('active');
+                            sel.value = btn.getAttribute('data-exam') || '';
+                            var stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
+                            var elpId = stored ? stored.elpId : 'ELP' + (250000 + dashboardData.student.id);
+                            loadResults(dashboardData, elpId);
+                        });
+                    });
+                }
+            }
+
+            // Load and render the Top 3 Class Leaders Honor Roll
+            async function loadClassLeaders(data, examType) {
+                var podiumEl = document.getElementById('podium-display');
+                var unreleasedEl = document.getElementById('leaders-unreleased');
+                var badgeEl = document.getElementById('leaders-exam-badge');
+                var subtitleEl = document.getElementById('leaders-subtitle');
+                if (!podiumEl) return;
+
+                var className = (data.class && data.class.name) ? data.class.name : 'Class';
+                var examDef = getExamDef(examType);
+                var examLabel = examDef ? examDef.label : 'Overall Academic Standing';
+
+                if (subtitleEl) {
+                    subtitleEl.textContent = 'Top performers in ' + className + ' for ' + examLabel;
+                }
+
+                if (data.resultsOnHold) {
+                    podiumEl.innerHTML = '';
+                    if (unreleasedEl) unreleasedEl.classList.remove('d-none');
+                    if (badgeEl) {
+                        badgeEl.className = 'badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fw-bold';
+                        badgeEl.innerHTML = '<i class="fas fa-lock me-1"></i> Under Review';
+                    }
+                    return;
+                }
+
+                var classId = data.class ? data.class.id : null;
+                if (!classId) {
+                    podiumEl.innerHTML = '<div class="col-12 text-center text-muted py-3">Class assignment required to view honor roll.</div>';
+                    return;
+                }
+
+                try {
+                    var url = '/api/results/class-leaders/' + classId + (examType ? '?examType=' + encodeURIComponent(examType) : '');
+                    var res = await fetch(url);
+                    var json = await res.json();
+                    var leaders = json.leaders || [];
+
+                    if (!json.isPublished && leaders.length === 0) {
+                        podiumEl.innerHTML = '';
+                        if (unreleasedEl) unreleasedEl.classList.remove('d-none');
+                        if (badgeEl) {
+                            badgeEl.className = 'badge bg-secondary-subtle text-secondary px-3 py-2 rounded-pill fw-bold';
+                            badgeEl.innerHTML = '<i class="fas fa-clock me-1"></i> Awaiting Publication';
+                        }
+                        return;
+                    }
+
+                    if (unreleasedEl) unreleasedEl.classList.add('d-none');
+                    if (badgeEl) {
+                        badgeEl.className = 'badge bg-success-subtle text-success px-3 py-2 rounded-pill fw-bold';
+                        badgeEl.innerHTML = '<i class="fas fa-check-circle me-1"></i> Officially Published';
+                    }
+
+                    if (leaders.length === 0) {
+                        podiumEl.innerHTML = '<div class="col-12 text-center text-muted py-3"><i class="fas fa-award me-1"></i> No approved exam records published yet for this selection.</div>';
+                        return;
+                    }
+
+                    var currentStudentId = data.student ? data.student.id : null;
+
+                    var first = leaders.find(function (l) { return l.rank === 1; });
+                    var second = leaders.find(function (l) { return l.rank === 2; });
+                    var third = leaders.find(function (l) { return l.rank === 3; });
+
+                    function renderPodiumCard(item, rankNum, labelText, medalIcon, baseText) {
+                        if (!item) {
+                            return '<div class="podium-card rank-' + rankNum + ' opacity-50">' +
+                                '<div class="podium-student-name">Vacant</div>' +
+                                '<div class="podium-pedestal">' + baseText + '</div>' +
+                                '</div>';
+                        }
+                        var isCurrent = currentStudentId && (item.studentId === currentStudentId);
+                        var avatarUrl = item.image || '/images/ALIF.png';
+                        var youHtml = isCurrent ? '<div class="podium-you-badge"><i class="fas fa-star me-1"></i>That\'s You!</div>' : '';
+                        var crownHtml = rankNum === 1 ? '<i class="fas fa-crown crown-icon"></i>' : '';
+
+                        return '<div class="podium-card rank-' + rankNum + (isCurrent ? ' border-primary' : '') + '">' +
+                            crownHtml +
+                            '<div class="podium-avatar-wrap">' +
+                                '<img src="' + avatarUrl + '" alt="' + item.name + '" class="podium-avatar" onerror="this.src=\'/images/ALIF.png\'">' +
+                                '<div class="podium-rank-badge">' + medalIcon + '</div>' +
+                            '</div>' +
+                            '<div class="podium-student-name" title="' + item.name + '">' + item.name + '</div>' +
+                            '<div class="podium-id-tag">' + item.elpId + '</div>' +
+                            '<div class="podium-score-pill"><i class="fas fa-star text-warning me-1"></i>' + item.totalScore + ' pts (' + item.percentage + '%)</div>' +
+                            youHtml +
+                            '<div class="podium-pedestal">' + baseText + '</div>' +
+                            '</div>';
+                    }
+
+                    var html = '';
+                    html += renderPodiumCard(second, 2, '2nd Place', '🥈', '2nd');
+                    html += renderPodiumCard(first, 1, '1st Champion', '🥇', '1st');
+                    html += renderPodiumCard(third, 3, '3rd Place', '🥉', '3rd');
+
+                    podiumEl.innerHTML = html;
+                } catch (e) {
+                    podiumEl.innerHTML = '<div class="col-12 text-center text-muted py-2">Could not load honor roll.</div>';
+                }
             }
 
             function getExamDef(examType) {
@@ -2497,6 +2654,9 @@
                 var summaryEl = document.getElementById('results-summary');
                 var holdBanner = document.getElementById('results-hold-banner');
                 var holdReleaseText = document.getElementById('hold-release-text');
+
+                var examType = document.getElementById('exam-type-select').value;
+                loadClassLeaders(data, examType);
 
                 // Check if results are on hold
                 if (data.resultsOnHold) {
@@ -3248,6 +3408,11 @@
 
             document.getElementById('exam-type-select').addEventListener('change', function () {
                 if (!dashboardData) return;
+                var currentVal = this.value;
+                var chips = document.querySelectorAll('#exam-chips-container .exam-chip-btn');
+                chips.forEach(function (b) {
+                    b.classList.toggle('active', (b.getAttribute('data-exam') || '') === currentVal);
+                });
                 var stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY));
                 var elpId = stored ? stored.elpId : 'ELP' + (250000 + dashboardData.student.id);
                 loadResults(dashboardData, elpId);

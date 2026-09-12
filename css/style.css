@@ -1,5 +1,5 @@
-/* --- Google Font --- */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
+/* --- Google Fonts (Fixed Consistent Typography Across Entire App) --- */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap');
 
 /* --- Global Variables --- */
 :root {
@@ -64,12 +64,31 @@ body[data-theme="dark"] {
     box-sizing: border-box;
 }
 
+body, button, input, select, textarea, .form-control, .form-select, .btn, .table {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
 body {
-    font-family: 'Poppins', sans-serif;
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     color: var(--text-primary);
     background-color: var(--bg-body);
     line-height: 1.7;
     transition: background-color 0.3s, color 0.3s;
+}
+
+@media (max-width: 768px) {
+    /* Prevent intrusive auto-zoom on mobile inputs */
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="date"],
+    select,
+    textarea {
+        font-size: 16px !important;
+    }
 }
 
 h1, h2, h3, h4, h5, h6 {
@@ -892,8 +911,24 @@ body[data-theme="dark"] .stat-card {
 .lib-footer .footer-bottom .dev { color: var(--primary); font-weight: 700; }
 
 /* =========================================
-    RESPONSIVE TOGGLE LOGIC
+    RESPONSIVE TOGGLE LOGIC & MOBILE DRAWER
 ========================================= */
+.sidebar-backdrop {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    z-index: 1040;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+.sidebar-backdrop.active {
+    display: block;
+    opacity: 1;
+}
+
 @media (min-width: 992px) {
     .sidebar { transform: translateX(0); }
     .main-content { margin-left: var(--sidebar-width); }
@@ -901,13 +936,322 @@ body[data-theme="dark"] .stat-card {
 }
 
 @media (max-width: 991.98px) {
-    .sidebar { transform: translateX(calc(-1 * var(--sidebar-width))); }
+    .sidebar {
+        position: fixed;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 1050;
+        transform: translateX(calc(-1 * var(--sidebar-width)));
+        transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
     .main-content { margin-left: 0; }
     #sidebar-toggler { display: block; }
     .sidebar.toggled {
         transform: translateX(0);
-        box-shadow: 0 0 15px rgba(0, 0, 0, 0.25);
+        box-shadow: 4px 0 25px rgba(0, 0, 0, 0.3);
     }
+}
+
+/* =========================================
+    EXAM SELECTOR CHIPS & PILLS
+========================================= */
+.exam-chips-scroll {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+}
+.exam-chips-scroll::-webkit-scrollbar { height: 4px; }
+.exam-chips-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+
+.exam-chip-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 30px;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #475569;
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+}
+.exam-chip-btn:hover {
+    border-color: var(--primary);
+    color: var(--primary-dark);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(29, 217, 29, 0.15);
+}
+.exam-chip-btn.active {
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary-medium));
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 14px rgba(15, 81, 14, 0.3);
+}
+.exam-chip-btn .chip-badge {
+    font-size: 0.72rem;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: rgba(0,0,0,0.07);
+}
+.exam-chip-btn.active .chip-badge {
+    background: rgba(255,255,255,0.25);
+    color: #fff;
+}
+
+/* =========================================
+    TOP 3 CLASS LEADERS - OLYMPIC PODIUM
+========================================= */
+.class-leaders-card {
+    background: linear-gradient(135deg, #ffffff 0%, #f7fdf7 100%);
+    border: 1px solid #dcf2dc;
+    border-radius: 22px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 10px 30px rgba(15, 81, 14, 0.08);
+    position: relative;
+    overflow: hidden;
+}
+.class-leaders-card::before {
+    content: '';
+    position: absolute;
+    top: -50px;
+    right: -50px;
+    width: 180px;
+    height: 180px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(29, 217, 29, 0.12), transparent 70%);
+    pointer-events: none;
+}
+
+.leaders-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.2rem;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+.leaders-title-group h4 {
+    margin: 0;
+    font-size: 1.15rem;
+    font-weight: 800;
+    color: var(--primary-dark);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.leaders-title-group p {
+    margin: 2px 0 0;
+    font-size: 0.78rem;
+    color: #64748b;
+}
+
+/* Podium Grid */
+.podium-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.1fr 1fr;
+    gap: 12px;
+    align-items: end;
+    padding: 1rem 0.5rem 0;
+}
+
+/* Individual Podium Card */
+.podium-card {
+    background: #fff;
+    border-radius: 18px;
+    padding: 1.2rem 0.8rem 1rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+}
+.podium-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+}
+
+/* 1st Place - Gold Champion */
+.podium-card.rank-1 {
+    border-color: #f1c40f;
+    background: linear-gradient(180deg, #fffcf0 0%, #ffffff 100%);
+    box-shadow: 0 8px 25px rgba(241, 196, 15, 0.22);
+    padding-top: 1.5rem;
+    z-index: 2;
+}
+.podium-card.rank-1 .crown-icon {
+    position: absolute;
+    top: -16px;
+    font-size: 1.6rem;
+    color: #f39c12;
+    animation: crownFloat 2.5s ease-in-out infinite;
+}
+@keyframes crownFloat {
+    0%, 100% { transform: translateY(0) rotate(-2deg); }
+    50% { transform: translateY(-4px) rotate(2deg); }
+}
+
+/* 2nd Place - Silver */
+.podium-card.rank-2 {
+    border-color: #cbd5e1;
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    box-shadow: 0 4px 18px rgba(148, 163, 184, 0.18);
+}
+
+/* 3rd Place - Bronze */
+.podium-card.rank-3 {
+    border-color: #fed7aa;
+    background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+    box-shadow: 0 4px 18px rgba(217, 119, 6, 0.15);
+}
+
+/* Avatar with medal ring */
+.podium-avatar-wrap {
+    position: relative;
+    margin-bottom: 0.6rem;
+}
+.podium-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 3px solid #fff;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+}
+.podium-card.rank-1 .podium-avatar {
+    width: 76px;
+    height: 76px;
+    border-color: #f1c40f;
+}
+.podium-card.rank-2 .podium-avatar { border-color: #94a3b8; }
+.podium-card.rank-3 .podium-avatar { border-color: #d97706; }
+
+.podium-rank-badge {
+    position: absolute;
+    bottom: -6px;
+    right: -4px;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.95rem;
+    color: #fff;
+    font-weight: 800;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.podium-card.rank-1 .podium-rank-badge {
+    background: linear-gradient(135deg, #f1c40f, #d4ac0d);
+    width: 32px;
+    height: 32px;
+}
+.podium-card.rank-2 .podium-rank-badge { background: linear-gradient(135deg, #94a3b8, #64748b); }
+.podium-card.rank-3 .podium-rank-badge { background: linear-gradient(135deg, #d97706, #b45309); }
+
+.podium-student-name {
+    font-size: 0.92rem;
+    font-weight: 700;
+    color: #1e293b;
+    margin: 0 0 2px;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.podium-card.rank-1 .podium-student-name { font-size: 1.05rem; }
+
+.podium-id-tag {
+    font-size: 0.68rem;
+    color: #94a3b8;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.podium-score-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 0.85rem;
+}
+.podium-card.rank-1 .podium-score-pill {
+    background: #fef9c3;
+    color: #854d0e;
+    font-size: 0.95rem;
+    padding: 4px 14px;
+}
+.podium-card.rank-2 .podium-score-pill { background: #f1f5f9; color: #334155; }
+.podium-card.rank-3 .podium-score-pill { background: #ffedd5; color: #9a3412; }
+
+/* Podium Pedestal Base */
+.podium-pedestal {
+    width: 100%;
+    border-radius: 12px 12px 6px 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-weight: 800;
+    font-size: 1.4rem;
+    margin-top: 0.7rem;
+}
+.podium-card.rank-1 .podium-pedestal {
+    height: 64px;
+    background: linear-gradient(180deg, #f1c40f, #d4ac0d);
+    box-shadow: 0 4px 15px rgba(241, 196, 15, 0.4);
+}
+.podium-card.rank-2 .podium-pedestal {
+    height: 48px;
+    background: linear-gradient(180deg, #94a3b8, #64748b);
+}
+.podium-card.rank-3 .podium-pedestal {
+    height: 38px;
+    background: linear-gradient(180deg, #d97706, #b45309);
+}
+
+.podium-you-badge {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: #fff;
+    font-size: 0.65rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 2px 8px;
+    border-radius: 12px;
+    margin-top: 4px;
+    animation: pulseYou 2s infinite;
+}
+@keyframes pulseYou {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.9; }
+}
+
+@media (max-width: 600px) {
+    .class-leaders-card { padding: 1rem 0.8rem; }
+    .podium-grid { gap: 6px; padding: 0.5rem 0 0; }
+    .podium-avatar { width: 50px; height: 50px; }
+    .podium-card.rank-1 .podium-avatar { width: 60px; height: 60px; }
+    .podium-student-name { font-size: 0.75rem; }
+    .podium-card.rank-1 .podium-student-name { font-size: 0.85rem; }
+    .podium-score-pill { font-size: 0.72rem; padding: 2px 6px; }
+    .podium-pedestal { font-size: 1rem; }
+    .podium-card.rank-1 .podium-pedestal { height: 46px; }
+    .podium-card.rank-2 .podium-pedestal { height: 36px; }
+    .podium-card.rank-3 .podium-pedestal { height: 28px; }
 }
 
 /* --- Print Styles --- */

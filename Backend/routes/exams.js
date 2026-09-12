@@ -69,19 +69,32 @@ router.get('/', async (req, res) => {
     }
 });
 
-// GET exams assigned to a class (ordered by sort_order)
+// GET exams assigned to a class (admin-created exams only)
 router.get('/class/:classId', async (req, res) => {
     try {
         await ensureTables();
-        const { rows } = await query(`
-            SELECT e.id, e.name, e.exam_key, e.max_score, e.sort_order, e.active,
-                   (ce.class_id IS NOT NULL) AS assigned
-            FROM exams e
-            LEFT JOIN class_exams ce ON ce.exam_id = e.id AND ce.class_id = $1
-            WHERE e.deleted_at IS NULL
+        const classId = parseInt(req.params.classId);
+        // Check if specific exams were assigned by admin to this class
+        const { rows: assignedExams } = await query(`
+            SELECT e.id, e.name, e.exam_key, e.max_score, e.sort_order, e.active, true AS assigned
+            FROM class_exams ce
+            JOIN exams e ON ce.exam_id = e.id
+            WHERE ce.class_id = $1 AND e.deleted_at IS NULL AND e.active = true
             ORDER BY e.sort_order ASC, e.id ASC
-        `, [req.params.classId]);
-        res.json(rows);
+        `, [classId]);
+
+        if (assignedExams.length > 0) {
+            return res.json(assignedExams);
+        }
+
+        // Fallback: If admin hasn't restricted exams for this class yet, return all active admin-created exams
+        const { rows: allExams } = await query(`
+            SELECT id, name, exam_key, max_score, sort_order, active, false AS assigned
+            FROM exams
+            WHERE deleted_at IS NULL AND active = true
+            ORDER BY sort_order ASC, id ASC
+        `);
+        res.json(allExams);
     } catch (err) {
         res.status(500).json({ error: err.message });
     }

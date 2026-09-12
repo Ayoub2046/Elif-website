@@ -46,6 +46,92 @@ async function getExamMaxScore(examKey) {
     return EXAM_TYPES[examKey]?.maxScore || 100;
 }
 
+// GET top 3 class leaders in a class (honor roll / leaderboard)
+router.get('/class-leaders/:classId', async (req, res) => {
+    const classId = parseInt(req.params.classId);
+    if (isNaN(classId)) return res.status(400).json({ error: 'Invalid class ID' });
+    const examType = req.query.examType || null;
+    try {
+        // Query top students with approved results in this class
+        let sql = `
+            SELECT s.id AS student_id, s.name, s.image, s.grade, s.gpa,
+                   COALESCE(SUM(r.score), 0) AS total_score,
+                   COALESCE(AVG(r.score), 0) AS avg_score,
+                   COALESCE(SUM(COALESCE(r.max_score, 100)), 0) AS total_max,
+                   COUNT(r.id) AS subject_count
+            FROM students s
+            JOIN results r ON r.student_id = s.id
+            WHERE (s.classid = $1 OR s.id IN (SELECT student_id FROM class_students WHERE class_id = $1))
+              AND s.deleted_at IS NULL
+              AND r.approval_status = 'approved'
+              AND r.deleted_at IS NULL
+        `;
+        const params = [classId];
+        if (examType && examType.trim() !== '') {
+            sql += ` AND r.exam_type = $2`;
+            params.push(examType.trim());
+        }
+        sql += `
+            GROUP BY s.id, s.name, s.image, s.grade, s.gpa
+            HAVING COUNT(r.id) > 0
+            ORDER BY total_score DESC, avg_score DESC
+            LIMIT 10
+        `;
+        const { rows } = await query(sql, params);
+
+        // Check if any results for this class and exam are on hold
+        let onHold = false;
+        try {
+            let holdSql = `
+                SELECT r.id FROM results r
+                JOIN students s ON r.student_id = s.id
+                WHERE (s.classid = $1 OR s.id IN (SELECT student_id FROM class_students WHERE class_id = $1))
+                  AND r.approval_status = 'on_hold'
+                  AND r.deleted_at IS NULL
+            `;
+            const holdParams = [classId];
+            if (examType && examType.trim() !== '') {
+                holdSql += ` AND r.exam_type = $2`;
+                holdParams.push(examType.trim());
+            }
+            holdSql += ` LIMIT 1`;
+            const { rows: holdRows } = await query(holdSql, holdParams);
+            if (holdRows.length > 0) onHold = true;
+        } catch (e) {}
+
+        const leaders = rows.map((r, idx) => {
+            const tot = parseFloat(r.total_score) || 0;
+            const mx = parseFloat(r.total_max) || 0;
+            const pct = mx > 0 ? Math.round((tot / mx) * 100) : 0;
+            return {
+                rank: idx + 1,
+                studentId: r.student_id,
+                elpId: `ELP${String(250000 + r.student_id).slice(-6)}`,
+                name: r.name,
+                image: r.image,
+                grade: r.grade || 'A',
+                gpa: r.gpa,
+                totalScore: tot % 1 === 0 ? tot : tot.toFixed(1),
+                totalMax: mx % 1 === 0 ? mx : mx.toFixed(1),
+                avgScore: (parseFloat(r.avg_score) || 0).toFixed(1),
+                percentage: pct,
+                subjectCount: parseInt(r.subject_count) || 0
+            };
+        });
+
+        res.json({
+            classId,
+            examType,
+            onHold,
+            isPublished: !onHold && leaders.length > 0,
+            leaders: leaders.slice(0, 3),
+            allLeaders: leaders
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // GET approved results for a specific student (for student/parent view)
 // Optional ?examType= filter returns results for a single exam only
 router.get('/:studentId', async (req, res) => {

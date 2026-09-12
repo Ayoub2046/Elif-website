@@ -15,7 +15,7 @@
     <link rel="stylesheet" href="/css/style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <style>
-        body { background-color: var(--bg-body, #f0f1f0); }
+        body { background-color: var(--bg-body, #f0f1f0); font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
         .td-wrap { max-width: 1300px; margin: 0 auto; padding: 1.5rem; }
 
         /* === HEADER === */
@@ -194,16 +194,39 @@
 
         .td-alert { margin-top: 0.8rem; }
 
+        /* === RESULTS ENTRY UI === */
+        .res-student-row { display: flex; align-items: center; gap: 10px; }
+        .res-avatar { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.78rem; color: #fff; flex-shrink: 0; }
+        .res-name { font-weight: 600; font-size: 0.83rem; color: var(--text-primary,#1a1a1a); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 150px; }
+        .res-id { font-size: 0.65rem; color: #999; font-family: monospace; }
+        .score-input-wrap { position: relative; }
+        .score-input-wrap input[type=number] { font-weight: 700; font-size: 0.95rem; text-align: center; border-radius: 8px; padding: 0.3rem 0.4rem; width: 90px; border: 2px solid #e0e0e0; transition: border-color 0.2s; }
+        .score-input-wrap input[type=number]:focus { outline: none; border-color: #1dd91d; box-shadow: 0 0 0 3px rgba(29,217,29,0.12); }
+        .pct-bar-wrap { height: 6px; background: #e9ecef; border-radius: 4px; margin-top: 4px; width: 90px; overflow: hidden; }
+        .pct-bar { height: 100%; border-radius: 4px; transition: width 0.3s, background 0.3s; background: #6c757d; }
+        .grade-badge { display: inline-block; font-size: 0.7rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.3px; }
+        .grade-A-plus { background:#d1fadf;color:#16a34a; }
+        .grade-A { background:#dcfce7;color:#15803d; }
+        .grade-B { background:#dbeafe;color:#1d4ed8; }
+        .grade-C { background:#fef9c3;color:#854d0e; }
+        .grade-D { background:#ffedd5;color:#c2410c; }
+        .grade-F { background:#fee2e2;color:#dc2626; }
+        .live-stats-bar { background: linear-gradient(135deg, #e8f9e8, #f0fff0); border: 1px solid #c3e6c3; border-radius: 12px; padding: 0.8rem 1rem; margin-bottom: 1rem; }
+        .live-stats-bar .stat-num { font-size: 1.3rem; font-weight: 800; color: #0f510e; }
+        .live-stats-bar .stat-lbl { font-size: 0.65rem; color: #555; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+        .setup-bar { background: linear-gradient(135deg,#f0fff0,#e8f9e8); border: 1px solid #c3e6c3; border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
         @media (max-width: 768px) {
-            .td-wrap { padding: 1rem; }
-            .td-header { flex-direction: column; text-align: center; padding: 1.2rem; gap: 0.7rem; }
-            .td-header-left h1 { font-size: 1.2rem; }
-            .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 0.7rem; }
-            .stat-card .stat-val { font-size: 1.2rem; }
-            .td-nav .td-nav-btn { font-size: 0.7rem; padding: 0.45rem 0.7rem; }
+            .td-wrap { padding: 0.7rem; }
+            .td-header { flex-direction: column; text-align: center; padding: 1rem; gap: 0.6rem; }
+            .td-header-left h1 { font-size: 1.15rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); gap: 0.6rem; }
+            .stat-card .stat-val { font-size: 1.1rem; }
+            .td-nav .td-nav-btn { font-size: 0.68rem; padding: 0.4rem 0.6rem; }
+            .res-name { max-width: 110px; }
         }
         @media (max-width: 480px) {
-            .stat-grid { grid-template-columns: 1fr; }
+            .stat-grid { grid-template-columns: repeat(2,1fr); }
+            .td-nav .td-nav-btn { font-size: 0.62rem; padding: 0.35rem 0.5rem; }
         }
     </style>
 </head>
@@ -329,38 +352,135 @@
             <div class="row g-3">
                 <div class="col-lg-8">
                     <div class="td-card">
-                        <div class="td-card-h"><h5><i class="fas fa-edit"></i> Enter Exam Scores</h5>
-                            <div class="d-flex gap-2 align-items-center flex-wrap">
-                                <select id="results-class-select" class="form-select form-select-sm" style="width:auto;"><option value="">Class</option></select>
-                                <select id="results-exam-select" class="form-select form-select-sm" style="width:auto;"><option value="">-- Select Exam --</option></select>
-                                <input type="text" id="results-subject" class="form-control form-control-sm" placeholder="Subject" style="width:130px;">
-                                <input type="date" id="results-date" class="form-control form-control-sm" style="width:140px;">
-                                <button id="load-results-students-btn" class="btn btn-primary btn-sm" disabled><i class="fas fa-sync"></i></button>
-                                <a id="download-results-template" class="btn btn-success btn-sm" href="/api/results/template/download" target="_blank"><i class="fas fa-download me-1"></i>Template</a>
-                                <button id="upload-results-csv-trigger" class="btn btn-warning btn-sm"><i class="fas fa-upload me-1"></i>Import CSV</button>
-                                <input type="file" id="upload-results-csv-input" accept=".csv" style="display:none;">
+                        <div class="td-card-h">
+                            <div>
+                                <h5 class="mb-1"><i class="fas fa-clipboard-check text-success"></i> Record Official Exam Scores</h5>
+                                <div class="d-flex align-items-center gap-2">
+                                    <span class="badge bg-primary-subtle text-primary border border-primary-subtle" style="font-size:0.75rem;">
+                                        <i class="fas fa-shield-alt me-1"></i> Admin Scheduled Exams Only
+                                    </span>
+                                    <small class="text-muted" style="font-size:0.75rem;">Teachers can only enter results for exams created by school administration.</small>
+                                </div>
                             </div>
-                            <div class="mt-2"><small class="text-muted"><i class="fas fa-info-circle me-1"></i>Select the exam you want to record a result for, then enter its score.</small></div>
                         </div>
-                        <div class="td-card-b d-none" id="results-entry-card">
-                            <div class="alert alert-info py-2 mb-2" style="font-size:0.8rem;"><i class="fas fa-info-circle me-1"></i> Scores go to admin for approval.</div>
-                            <div class="table-responsive"><table class="table table-hover mb-0" id="results-entry-table"><thead><tr><th rowspan="2">Student</th><th class="text-center" id="results-exam-th" style="background:#0f510e;color:#fff;">Exam</th><th rowspan="2" class="text-center">Total</th></tr></thead><tbody id="results-table-body"></tbody></table></div>
-                            <div class="mt-2 text-end"><button id="submit-results-btn" class="btn btn-success btn-sm"><i class="fas fa-paper-plane me-1"></i> Submit for Approval</button></div>
+                        <div class="td-card-b">
+                            <!-- Setup Bar -->
+                            <div class="setup-bar">
+                                <div class="row g-2 align-items-end">
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;"><i class="fas fa-chalkboard text-success me-1"></i>Class</label>
+                                        <select id="results-class-select" class="form-select form-select-sm">
+                                            <option value="">-- Select Class --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;"><i class="fas fa-file-signature text-primary me-1"></i>Admin Exam</label>
+                                        <select id="results-exam-select" class="form-select form-select-sm">
+                                            <option value="">-- Select Exam --</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;"><i class="fas fa-book text-warning me-1"></i>Subject</label>
+                                        <input type="text" id="results-subject" class="form-control form-control-sm" placeholder="e.g. Mathematics" list="subject-suggestions" autocomplete="off">
+                                        <datalist id="subject-suggestions">
+                                            <option value="Mathematics"><option value="Physics"><option value="Chemistry">
+                                            <option value="Biology"><option value="English"><option value="History">
+                                            <option value="Geography"><option value="Computer Science">
+                                            <option value="Islamic Studies"><option value="Arabic"><option value="Economics">
+                                        </datalist>
+                                    </div>
+                                    <div class="col-md-3 col-6">
+                                        <label class="form-label fw-semibold mb-1" style="font-size:0.78rem;"><i class="fas fa-calendar-day text-danger me-1"></i>Date</label>
+                                        <input type="date" id="results-date" class="form-control form-control-sm">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Live Stats Bar -->
+                            <div class="live-stats-bar d-none" id="live-stats-bar">
+                                <div class="d-flex justify-content-around flex-wrap gap-2 text-center">
+                                    <div><div class="stat-num" id="live-total-students">0</div><div class="stat-lbl">Enrolled</div></div>
+                                    <div style="width:1px;background:#c3e6c3;"></div>
+                                    <div><div class="stat-num text-primary" id="live-entered-count">0</div><div class="stat-lbl">Graded</div></div>
+                                    <div style="width:1px;background:#c3e6c3;"></div>
+                                    <div><div class="stat-num text-success" id="live-class-avg">0%</div><div class="stat-lbl">Class Avg</div></div>
+                                    <div style="width:1px;background:#c3e6c3;"></div>
+                                    <div><div class="stat-num" id="live-pass-rate" style="color:#7c3aed;">0%</div><div class="stat-lbl">Pass Rate</div></div>
+                                    <div style="width:1px;background:#c3e6c3;"></div>
+                                    <div><div class="stat-num text-dark" id="results-exam-th">—</div><div class="stat-lbl">Exam</div></div>
+                                </div>
+                            </div>
+
+                            <!-- Action Toolbar -->
+                            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                                <div class="d-flex gap-2 flex-wrap">
+                                    <button id="load-results-students-btn" class="btn btn-success btn-sm px-3" disabled>
+                                        <i class="fas fa-users me-1"></i> Load Roster
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm" id="btn-quick-fill" style="display:none;">
+                                        <i class="fas fa-bolt me-1"></i> Quick Fill
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" id="btn-clear-scores" style="display:none;">
+                                        <i class="fas fa-undo me-1"></i> Reset All
+                                    </button>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a id="download-results-template" class="btn btn-outline-secondary btn-sm" href="/api/results/template/download" target="_blank">
+                                        <i class="fas fa-download me-1"></i> Template
+                                    </a>
+                                    <button id="upload-results-csv-trigger" class="btn btn-outline-warning btn-sm">
+                                        <i class="fas fa-file-csv me-1"></i> CSV
+                                    </button>
+                                    <input type="file" id="upload-results-csv-input" accept=".csv" style="display:none;">
+                                </div>
+                            </div>
+
+                            <div id="results-alert"></div>
+
+                            <!-- Live Roster Grade Entry Table -->
+                            <div class="d-none" id="results-entry-card">
+                                <div class="table-responsive" style="max-height:480px;overflow-y:auto;border-radius:10px;border:1px solid #e0e0e0;">
+                                    <table class="table table-hover align-middle mb-0" id="results-entry-table">
+                                        <thead style="position:sticky;top:0;z-index:5;background:linear-gradient(135deg,#0f510e,#1b9e1b);color:#fff;">
+                                            <tr>
+                                                <th style="width:32%;padding:0.8rem 1rem;">Student</th>
+                                                <th style="width:22%;text-align:center;padding:0.8rem 0.5rem;">Score</th>
+                                                <th style="width:22%;text-align:center;padding:0.8rem 0.5rem;">Grade</th>
+                                                <th style="padding:0.8rem 0.5rem;">Remarks</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="results-table-body"></tbody>
+                                    </table>
+                                </div>
+
+                                <div class="mt-3 p-3 rounded-3" style="background:linear-gradient(135deg,#e8f9e8,#f0fff0);border:1px solid #c3e6c3;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.7rem;">
+                                    <small class="text-muted"><i class="fas fa-shield-alt text-success me-1"></i> Submitted scores go to admin for review & approval before being visible to students.</small>
+                                    <button id="submit-results-btn" class="btn btn-success px-4 fw-bold" style="border-radius:10px;">
+                                        <i class="fas fa-paper-plane me-1"></i> Submit for Approval
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
                 <div class="col-lg-4">
                     <div class="td-card">
-                        <div class="td-card-h"><h5><i class="fas fa-check-circle"></i> Submission Status</h5></div>
-                        <div class="td-card-b p-0" id="submission-status-list" style="max-height:400px;overflow-y:auto;"></div>
+                        <div class="td-card-h">
+                            <h5><i class="fas fa-tasks text-primary"></i> Exam Submission Tracker</h5>
+                        </div>
+                        <div class="td-card-b p-0" id="submission-status-list" style="max-height:350px;overflow-y:auto;"></div>
                     </div>
+
                     <div class="td-card mt-3">
-                        <div class="td-card-h"><h5><i class="fas fa-history"></i> Submitted Results</h5></div>
-                        <div class="td-card-b p-0" id="submitted-results-list" style="max-height:400px;overflow-y:auto;"></div>
+                        <div class="td-card-h d-flex justify-content-between align-items-center">
+                            <h5><i class="fas fa-history text-secondary"></i> Results Approval Status</h5>
+                            <button class="btn btn-sm btn-outline-secondary py-0 px-2" onclick="loadSubmittedResults()" title="Refresh Status"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                        <div class="td-card-b p-0" id="submitted-results-list" style="max-height:380px;overflow-y:auto;"></div>
                     </div>
                 </div>
             </div>
-            <div id="results-alert"></div>
         </div>
 
         <!-- ======================== TIMETABLE / SCHEDULE ======================== -->
@@ -465,6 +585,8 @@
             const data = await res.json();
             $('teacher-name').textContent = `Welcome, ${data.name}!`;
             $('teacher-subject').textContent = `Subject: ${data.subject || 'Not Set'} · ${data.classes.length} class(es) · ${data.totalStudents} students`;
+            // Auto-fill subject from teacher profile
+            if (data.subject) { $('results-subject').value = data.subject; }
 
             // Stats overview
             $('overview-stats').innerHTML = `
@@ -755,48 +877,169 @@
         $('results-exam-select').addEventListener('change', () => { if ($('results-class-select').value) loadResultsStudents(); });
         $('results-subject').addEventListener('input', renderSubmissionStatus);
 
+        const AVATAR_GRADIENTS = ['linear-gradient(135deg,#0f510e,#1dd91d)','linear-gradient(135deg,#0d6efd,#6610f2)','linear-gradient(135deg,#dc3545,#e83e8c)','linear-gradient(135deg,#fd7e14,#ffc107)','linear-gradient(135deg,#6f42c1,#d63384)','linear-gradient(135deg,#0dcaf0,#0d6efd)','linear-gradient(135deg,#198754,#20c997)'];
+
+        function getGradeBadge(pct) {
+            if (pct >= 95) return {cls:'grade-A-plus', text:'A+'};
+            if (pct >= 85) return {cls:'grade-A', text:'A'};
+            if (pct >= 75) return {cls:'grade-B', text:'B'};
+            if (pct >= 60) return {cls:'grade-C', text:'C'};
+            if (pct >= 50) return {cls:'grade-D', text:'D'};
+            return {cls:'grade-F', text:'F'};
+        }
+
+        function updateLiveResultsStats() {
+            const examType = $('results-exam-select').value;
+            const et = examDefs[examType] || {max:100};
+            const entries = Object.values(currentResultsStudents);
+            const total = entries.length;
+            const entered = entries.filter(e => e.score > 0).length;
+            const scores = entries.map(e => e.score);
+            const avg = total > 0 ? (scores.reduce((a,b) => a+b, 0) / total) : 0;
+            const avgPct = et.max > 0 ? Math.round((avg / et.max) * 100) : 0;
+            const passCount = scores.filter(s => et.max > 0 && (s/et.max)*100 >= 50).length;
+            const passRate = total > 0 ? Math.round((passCount / total) * 100) : 0;
+            $('live-total-students').textContent = total;
+            $('live-entered-count').textContent = entered;
+            $('live-class-avg').textContent = avgPct + '%';
+            $('live-pass-rate').textContent = passRate + '%';
+        }
+
         async function loadResultsStudents() {
             const classId = $('results-class-select').value;
             const examType = $('results-exam-select').value;
             if (!classId) return;
             if (!examType) {
-                $('results-alert').innerHTML = '<div class="alert alert-warning">Please select the exam you want to record a result for.</div>';
+                $('results-alert').innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Please select an exam first.</div>';
                 return;
             }
+            const btn = $('load-results-students-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Loading...';
             try {
                 const res = await fetch(`/api/classes/${classId}/students`);
                 const students = await res.json();
                 if (!res.ok) throw new Error(students.error || 'Failed to load students');
-                if (!Array.isArray(students)) throw new Error('Unexpected response loading students');
+                if (!Array.isArray(students) || students.length === 0) {
+                    $('results-alert').innerHTML = '<div class="alert alert-info">No students in this class.</div>';
+                    btn.disabled = false; btn.innerHTML = '<i class="fas fa-users me-1"></i> Load Roster';
+                    return;
+                }
                 const et = examDefs[examType] || { label: examType, max: 100 };
+                $('results-exam-th').textContent = et.label + ' (/' + et.max + ')';
+                $('results-alert').innerHTML = '';
                 $('results-entry-card').classList.remove('d-none');
-                $('results-exam-th').textContent = `${et.label} (/${et.max})`;
+                $('live-stats-bar').classList.remove('d-none');
+                $('btn-quick-fill').style.display = '';
+                $('btn-clear-scores').style.display = '';
                 const tbody = $('results-table-body');
                 currentResultsStudents = {};
-                tbody.innerHTML = students.map(s => {
-                    currentResultsStudents[s.id] = {name:s.name, score:0};
-                    return `<tr data-student="${s.id}"><td><strong>ELP${String(250000+s.id).slice(-6)}</strong><br><small>${s.name}</small></td>
-                        <td><input type="number" min="0" max="${et.max}" value="0" class="form-control form-control-sm si" data-sid="${s.id}" data-type="${examType}" style="width:90px;"></td>
-                        <td class="fw-bold stot" data-sid="${s.id}" style="color:var(--primary-dark);">0</td>
+                tbody.innerHTML = students.map((s, idx) => {
+                    currentResultsStudents[s.id] = {name: s.name, score: 0, max: et.max};
+                    const initials = (s.name||'?').split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
+                    const bg = AVATAR_GRADIENTS[s.id % AVATAR_GRADIENTS.length];
+                    const elpId = 'ELP' + String(250000 + s.id).slice(-6);
+                    return `<tr data-student="${s.id}">
+                        <td style="padding:0.7rem 1rem;">
+                            <div class="res-student-row">
+                                <div class="res-avatar" style="background:${bg};">${initials}</div>
+                                <div style="min-width:0;">
+                                    <div class="res-name">${s.name}</div>
+                                    <div class="res-id">${elpId}</div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="text-align:center;padding:0.7rem 0.5rem;">
+                            <div class="score-input-wrap d-flex flex-column align-items-center">
+                                <input type="number" min="0" max="${et.max}" value="0" inputmode="numeric"
+                                    class="si" data-sid="${s.id}" data-max="${et.max}"
+                                    style="font-weight:700;font-size:0.95rem;text-align:center;border-radius:8px;padding:0.3rem 0.4rem;width:90px;border:2px solid #e0e0e0;transition:border-color 0.2s;">
+                                <div class="pct-bar-wrap mt-1">
+                                    <div class="pct-bar" id="pctbar-${s.id}" style="width:0%;background:#6c757d;"></div>
+                                </div>
+                            </div>
+                        </td>
+                        <td style="text-align:center;padding:0.7rem 0.5rem;">
+                            <span class="grade-badge grade-F" id="grdbadge-${s.id}">F</span>
+                            <div style="font-size:0.65rem;color:#aaa;margin-top:2px;" id="pctlbl-${s.id}">0%</div>
+                        </td>
+                        <td style="padding:0.7rem 0.5rem;">
+                            <input type="text" class="form-control form-control-sm remark-input" data-sid="${s.id}"
+                                placeholder="Optional note..." style="font-size:0.75rem;border-radius:8px;">
+                        </td>
                     </tr>`;
                 }).join('');
-                $$('.si').forEach(inp => inp.addEventListener('change', e => {
-                    const sid = e.target.dataset.sid, max = (examDefs[examType] || {max:100}).max;
-                    let v = parseInt(e.target.value)||0; if(v>max){v=max;e.target.value=v;}
-                    if(v<0){v=0;e.target.value=0;}
-                    currentResultsStudents[sid].score=v;
-                    $$(`.stot[data-sid="${sid}"]`).forEach(el => {el.textContent=v; el.className='fw-bold stot '+(v>=Math.round(max*0.6)?'text-success':v>=Math.round(max*0.4)?'text-warning':'text-danger');});
-                }));
+
+                // Wire score inputs
+                tbody.querySelectorAll('.si').forEach(inp => {
+                    const update = () => {
+                        const sid = inp.dataset.sid;
+                        const mx = parseFloat(inp.dataset.max) || 100;
+                        let v = parseFloat(inp.value) || 0;
+                        if (v > mx) { v = mx; inp.value = mx; }
+                        if (v < 0) { v = 0; inp.value = 0; }
+                        currentResultsStudents[sid].score = v;
+                        const pct = mx > 0 ? Math.round((v / mx) * 100) : 0;
+                        const bar = $('pctbar-' + sid);
+                        const badge = $('grdbadge-' + sid);
+                        const lbl = $('pctlbl-' + sid);
+                        if (bar) { bar.style.width = pct + '%'; bar.style.background = pct >= 60 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444'; }
+                        if (lbl) lbl.textContent = pct + '%';
+                        if (badge) { const g = getGradeBadge(pct); badge.className = 'grade-badge ' + g.cls; badge.textContent = g.text; }
+                        // Highlight border
+                        inp.style.borderColor = pct >= 60 ? '#22c55e' : pct >= 40 ? '#f59e0b' : '#ef4444';
+                        updateLiveResultsStats();
+                    };
+                    inp.addEventListener('input', update);
+                    inp.addEventListener('change', update);
+                });
+
+                $('live-total-students').textContent = students.length;
+                $('live-entered-count').textContent = '0';
+                $('live-class-avg').textContent = '0%';
+                $('live-pass-rate').textContent = '0%';
+
             } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+            finally { btn.disabled = false; btn.innerHTML = '<i class="fas fa-users me-1"></i> Load Roster'; }
         }
+
+        // === QUICK FILL ===
+        $('btn-quick-fill').addEventListener('click', () => {
+            const examType = $('results-exam-select').value;
+            const et = examDefs[examType] || {max:100};
+            const val = prompt(`Quick fill: Enter a score for all students (0 – ${et.max}):`);
+            if (val === null) return;
+            const v = Math.min(Math.max(parseFloat(val) || 0, 0), et.max);
+            $$('#results-table-body .si').forEach(inp => {
+                inp.value = v;
+                inp.dispatchEvent(new Event('input'));
+            });
+        });
+
+        // === RESET ALL ===
+        $('btn-clear-scores').addEventListener('click', () => {
+            if (!confirm('Reset all scores to 0?')) return;
+            $$('#results-table-body .si').forEach(inp => { inp.value = 0; inp.dispatchEvent(new Event('input')); });
+        });
 
         $('submit-results-btn').addEventListener('click', async () => {
             const subject = $('results-subject').value.trim();
             const examType = $('results-exam-select').value;
-            if (!examType) { $('results-alert').innerHTML = '<div class="alert alert-warning">Please select the exam you want to record a result for.</div>'; return; }
-            if (!subject) { $('results-alert').innerHTML = '<div class="alert alert-warning">Enter a subject.</div>'; return; }
-            const records = Object.entries(currentResultsStudents).map(([id,d]) => ({studentId:parseInt(id),subject,examType,score:d.score}));
-            if (records.length===0) { $('results-alert').innerHTML = '<div class="alert alert-warning">No students.</div>'; return; }
+            const date = $('results-date').value;
+            if (!examType) { $('results-alert').innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Please select an exam.</div>'; return; }
+            if (!subject) { $('results-alert').innerHTML = '<div class="alert alert-warning"><i class="fas fa-exclamation-triangle me-2"></i>Please enter a subject name.</div>'; return; }
+            // Build records with remarks
+            const records = [];
+            $$('#results-table-body tr').forEach(row => {
+                const sid = row.dataset.student;
+                if (!sid) return;
+                const scoreInp = row.querySelector('.si');
+                const remarkInp = row.querySelector('.remark-input');
+                const score = scoreInp ? (parseFloat(scoreInp.value) || 0) : 0;
+                const remarks = remarkInp ? remarkInp.value.trim() : '';
+                records.push({studentId: parseInt(sid), subject, examType, score, remarks, date});
+            });
+            if (records.length === 0) { $('results-alert').innerHTML = '<div class="alert alert-warning">No students to submit.</div>'; return; }
             const btn = $('submit-results-btn');
             const original = btn.innerHTML;
             btn.disabled = true;
@@ -805,16 +1048,17 @@
                 const r = await fetch('/api/results/batch',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({records,teacherId:activeUser.id,teacherName:activeUser.name})});
                 let data = null;
                 try { data = await r.json(); } catch (e) { throw new Error('Server error (HTTP ' + r.status + '). Please try again.'); }
-                if (!r.ok) throw new Error(data.error||'Failed');
+                if (!r.ok) throw new Error(data.error || 'Failed');
                 submittedExamKeys.add(examType + '|' + subject);
-                $('results-alert').innerHTML = `<div class="alert alert-success alert-dismissible fade show">${data.message || 'Submitted for approval!'}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
+                $('results-alert').innerHTML = `<div class="alert alert-success alert-dismissible fade show"><i class="fas fa-check-circle me-2"></i>${data.message || 'Submitted for approval!'}<button type="button" class="btn-close" data-bs-dismiss="alert"></button></div>`;
                 loadSubmittedResults();
                 renderSubmissionStatus();
-                $('results-subject').value = '';
-                $$('.si').forEach(i=>i.value=0);
-                $$('.stot').forEach(el=>el.textContent='0');
-                Object.keys(currentResultsStudents).forEach(id => {currentResultsStudents[id].score=0;});
-            } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger">${e.message}</div>`; }
+                // Reset scores
+                $$('#results-table-body .si').forEach(i => { i.value = 0; i.dispatchEvent(new Event('input')); });
+                $$('#results-table-body .remark-input').forEach(i => i.value = '');
+                Object.keys(currentResultsStudents).forEach(id => { currentResultsStudents[id].score = 0; });
+                updateLiveResultsStats();
+            } catch(e) { $('results-alert').innerHTML = `<div class="alert alert-danger"><i class="fas fa-times-circle me-2"></i>${e.message}</div>`; }
             finally { btn.disabled = false; btn.innerHTML = original; }
         });
 
