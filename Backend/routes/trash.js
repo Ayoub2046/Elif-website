@@ -113,8 +113,8 @@ router.post('/soft-delete-all/:table', async (req, res) => {
     const { table } = req.params;
     if (!ALLOWED.includes(table)) return res.status(400).json({ error: 'Invalid table' });
     try {
-        await query(`UPDATE ${table} SET deleted_at = NOW() WHERE deleted_at IS NULL`);
-        res.json({ message: `All items moved to trash.` });
+        const { rowCount } = await query(`UPDATE ${table} SET deleted_at = NOW() WHERE deleted_at IS NULL`);
+        res.json({ message: `${rowCount} item(s) moved to trash.`, count: rowCount });
     } catch (error) {
         res.status(500).json({ error: error.message });
     }

@@ -95,9 +95,13 @@
                 });
                 if (!response.ok) throw new Error('Invalid username or password.');
                 const { user } = await response.json();
-                if (user.role === 'Admin') {
+                const roleLower = (user.role || '').toLowerCase();
+                if (roleLower.includes('admin')) {
                     sessionStorage.setItem('isAdminLoggedIn', 'true');
                     sessionStorage.setItem('adminProfile', JSON.stringify({ name: user.name, email: user.email }));
+                    sessionStorage.setItem('activeUser', JSON.stringify({
+                        loggedIn: true, role: 'Admin', name: user.name, email: user.email, id: user.id
+                    }));
                     window.location.href = 'admin.html';
                 } else {
                     loginAlert.innerHTML = `<div class="alert alert-danger">Access denied. Only admins can log in here.</div>`;

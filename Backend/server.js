@@ -84,16 +84,37 @@ const { query } = require('./database');
         `);
         console.log('class_students table ready.');
         
-        // Add activation columns to users table if they don't exist
+        // Add role, profile, and activation columns to users table if they don't exist
         try {
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(50) DEFAULT 'Parent'`);
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS subject TEXT`);
+            await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS image TEXT`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS activationtoken VARCHAR(255)`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS activationexpires BIGINT`);
             await query(`ALTER TABLE users ADD COLUMN IF NOT EXISTS isactive BOOLEAN DEFAULT true`);
-            console.log('Activation columns ready.');
+            console.log('User columns (role, activation, profile) ready.');
         } catch (alterErr) {
-            // Columns might already exist, which is fine
             if (!alterErr.message.includes('already exists')) {
-                console.error('Error adding activation columns:', alterErr.message);
+                console.error('Error adding users columns:', alterErr.message);
+            }
+        }
+
+        // Add missing columns to classes and students tables if they don't exist
+        try {
+            await query(`ALTER TABLE classes ADD COLUMN IF NOT EXISTS room TEXT`);
+            await query(`ALTER TABLE classes ADD COLUMN IF NOT EXISTS capacity INTEGER DEFAULT 30`);
+            await query(`ALTER TABLE classes ADD COLUMN IF NOT EXISTS color VARCHAR(20) DEFAULT '#4e73df'`);
+            await query(`ALTER TABLE classes ADD COLUMN IF NOT EXISTS students INTEGER DEFAULT 0`);
+            await query(`ALTER TABLE classes ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL`);
+            await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS grade VARCHAR(50)`);
+            await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS attendance VARCHAR(50)`);
+            await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS gpa NUMERIC(3, 2)`);
+            await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS remarks TEXT`);
+            await query(`ALTER TABLE students ADD COLUMN IF NOT EXISTS deleted_at TIMESTAMP DEFAULT NULL`);
+            console.log('Classes and students columns ready.');
+        } catch (alterErr) {
+            if (!alterErr.message.includes('already exists')) {
+                console.error('Error adding classes/students columns:', alterErr.message);
             }
         }
 

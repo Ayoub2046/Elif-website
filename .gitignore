@@ -11,6 +11,8 @@
 
 # Environment variables
 .env
+**/.env
+Backend/.env
 
 # Vercel output
 .vercel

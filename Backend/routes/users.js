@@ -8,7 +8,7 @@ const router = express.Router();
 // GET all users (without password)
 router.get('/', async (req, res) => {
     try {
-        const { rows } = await query(`SELECT id, name, email, role FROM users`);
+        const { rows } = await query(`SELECT id, name, email, role FROM users WHERE deleted_at IS NULL ORDER BY id`);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 // GET all parent users for dropdown
 router.get('/parents', async (req, res) => {
     try {
-        const { rows } = await query(`SELECT id, name, email FROM users WHERE role = 'Parent' ORDER BY name`);
+        const { rows } = await query(`SELECT id, name, email FROM users WHERE role = 'Parent' AND deleted_at IS NULL ORDER BY name`);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: err.message });

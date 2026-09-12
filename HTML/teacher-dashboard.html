@@ -405,7 +405,7 @@
     <script>
     document.addEventListener('DOMContentLoaded', async () => {
         const activeUser = JSON.parse(sessionStorage.getItem('activeUser'));
-        if (!activeUser || activeUser.role !== 'Teacher') { window.location.replace('portal_login.html'); return; }
+        if (!activeUser || (activeUser.role || '').toLowerCase() !== 'teacher') { window.location.replace('portal_login.html'); return; }
 
         // === UTILITIES ===
         const $ = id => document.getElementById(id);

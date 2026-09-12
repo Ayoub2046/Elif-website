@@ -10,7 +10,11 @@ const upload = multer({ storage: multer.memoryStorage() });
 router.get('/', async (req, res) => {
     try {
         const { rows } = await query(
-            `SELECT s.*, u.name AS parent_name FROM students s LEFT JOIN users u ON u.id = s.parentid ORDER BY s.id`
+            `SELECT s.*, u.name AS parent_name 
+             FROM students s 
+             LEFT JOIN users u ON u.id = s.parentid 
+             WHERE s.deleted_at IS NULL 
+             ORDER BY s.id`
         );
         res.json(rows);
     } catch (err) {
@@ -24,8 +28,8 @@ router.post('/', async (req, res) => {
         const { rows: maxRow } = await query(`SELECT MAX(id) AS "maxId" FROM students`);
         const newId = (maxRow[0] && maxRow[0].maxId) ? parseInt(maxRow[0].maxId) + 1 : 1;
         await query(
-            `INSERT INTO students (id, name, grade, enrollmentdate, birthdate, attendance, parentid) VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-            [newId, name, grade, enrollmentDate, birthDate, attendance || null, parentid || null]
+            `INSERT INTO students (id, name, grade, enrollmentdate, birthdate, attendance, parentid, deleted_at) VALUES ($1, $2, $3, $4, $5, $6, $7, NULL)`,
+            [newId, name, grade, enrollmentDate || null, birthDate || null, attendance || null, parentid || null]
         );
         res.status(201).json({ id: newId });
     } catch (err) {
@@ -46,12 +50,32 @@ router.put('/:id', async (req, res) => {
                 gpa = COALESCE($6, gpa),
                 remarks = COALESCE($7, remarks),
                 parentid = COALESCE($8, parentid)
-             WHERE id = $9`,
+             WHERE id = $9 AND deleted_at IS NULL`,
             [name, grade, enrollmentDate, birthDate, attendance, gpa, remarks, parentid || null, req.params.id]
         );
         res.json({ message: 'success' });
     } catch (err) {
         res.status(400).json({ error: err.message });
+    }
+});
+
+// DELETE all active students (soft-delete to recycle bin)
+router.delete('/', async (req, res) => {
+    try {
+        const { rowCount } = await query(`UPDATE students SET deleted_at = NOW() WHERE deleted_at IS NULL`);
+        res.json({ message: `${rowCount} student(s) moved to Recycle Bin.` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE hard all students permanently
+router.delete('/hard/all', async (req, res) => {
+    try {
+        const { rowCount } = await query(`DELETE FROM students`);
+        res.json({ message: `${rowCount} student(s) permanently deleted.` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
 });
 

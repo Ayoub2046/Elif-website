@@ -130,18 +130,40 @@
                         throw new Error(result.message || 'Invalid credentials.');
                     }
                     var user = result.user;
+                    var rawRole = (user.role || '').trim();
+                    var lowerRole = rawRole.toLowerCase();
+                    var normalizedRole = 'Parent';
+                    if (lowerRole.includes('admin')) {
+                        normalizedRole = 'Admin';
+                    } else if (lowerRole.includes('teach')) {
+                        normalizedRole = 'Teacher';
+                    } else if (lowerRole.includes('student')) {
+                        normalizedRole = 'Student';
+                    } else if (lowerRole.includes('parent')) {
+                        normalizedRole = 'Parent';
+                    } else if (rawRole) {
+                        normalizedRole = rawRole.charAt(0).toUpperCase() + rawRole.slice(1);
+                    }
+
                     sessionStorage.setItem('activeUser', JSON.stringify({
-                        loggedIn: true, role: user.role, name: user.name, email: user.email, id: user.id
+                        loggedIn: true, role: normalizedRole, name: user.name, email: user.email, id: user.id
                     }));
                     if (document.getElementById('rememberMe').checked) {
                         localStorage.setItem('pl_remembered', email);
                     } else {
                         localStorage.removeItem('pl_remembered');
                     }
-                    var redirectMap = { 'Admin': 'admin.html', 'Teacher': 'teacher-dashboard.html', 'Parent': 'parent_dashboard.html' };
-                    var target = redirectMap[user.role];
-                    if (!target) throw new Error('No dashboard for this role.');
-                    if (user.role === 'Admin') sessionStorage.setItem('isAdminLoggedIn', 'true');
+                    var redirectMap = {
+                        'Admin': 'admin.html',
+                        'Teacher': 'teacher-dashboard.html',
+                        'Parent': 'parent_dashboard.html',
+                        'Student': 'Student Results.html'
+                    };
+                    var target = redirectMap[normalizedRole] || 'parent_dashboard.html';
+                    if (normalizedRole === 'Admin') {
+                        sessionStorage.setItem('isAdminLoggedIn', 'true');
+                        sessionStorage.setItem('adminProfile', JSON.stringify({ name: user.name, email: user.email }));
+                    }
                     showAlert('Welcome, ' + user.name + '! Redirecting...', 'success');
                     setTimeout(function () { window.location.href = target; }, 600);
                 } catch (err) {

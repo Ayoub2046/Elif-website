@@ -161,7 +161,7 @@
     <script>
         document.addEventListener('DOMContentLoaded', async () => {
             const activeUser = JSON.parse(sessionStorage.getItem('activeUser'));
-            if (!activeUser || activeUser.role !== 'Parent') { window.location.replace('portal_login.html'); return; }
+            if (!activeUser || (activeUser.role || '').toLowerCase() !== 'parent') { window.location.replace('portal_login.html'); return; }
 
             document.getElementById('logout-btn').addEventListener('click', () => { sessionStorage.removeItem('activeUser'); window.location.replace('portal_login.html'); });
 
