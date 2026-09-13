@@ -351,17 +351,7 @@ function toggleTheme() {
     if (icon) icon.className = saved === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
 })();
     </script>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (sessionStorage.getItem('isAdminLoggedIn') !== 'true') {
-                window.location.href = 'admin-login.html';
-            }
-            const sidebar = document.querySelector('.sidebar');
-            const sidebarToggler = document.getElementById('sidebar-toggler');
-            if (sidebarToggler) sidebarToggler.addEventListener('click', () => sidebar.classList.toggle('toggled'));
-        });
-    </script>
-
+    <script src="/HTML/js/admin.js"></script>
     <script src="/JS/pwa.js"></script>
 </body>
 

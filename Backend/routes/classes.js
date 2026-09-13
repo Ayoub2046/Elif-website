@@ -87,9 +87,10 @@ router.get('/:id/unassigned-students', async (req, res) => {
         const { rows } = await query(`
             SELECT s.id, s.name, s.grade
             FROM students s
-            WHERE s.id NOT IN (
+            WHERE s.deleted_at IS NULL
+              AND s.id NOT IN (
                 SELECT student_id FROM class_students WHERE class_id = $1
-            )
+              )
             ORDER BY s.name
         `, [req.params.id]);
         res.json(rows);

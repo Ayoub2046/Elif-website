@@ -2305,8 +2305,21 @@
                             } else {
                                 switchToTab(tab);
                             }
-                        }
-                    });
+                });
+
+                // Explicit handler for mobile header offcanvas toggle button
+                document.querySelectorAll('[data-bs-target="#studentNavOffcanvas"]').forEach(function(btn) {
+                    if (!btn.dataset.boundOffcanvas) {
+                        btn.dataset.boundOffcanvas = 'true';
+                        btn.addEventListener('click', function(e) {
+                            e.preventDefault();
+                            var offEl = document.getElementById('studentNavOffcanvas');
+                            if (offEl) {
+                                var oc = bootstrap.Offcanvas.getOrCreateInstance(offEl);
+                                oc.toggle();
+                            }
+                        });
+                    }
                 });
             }
 

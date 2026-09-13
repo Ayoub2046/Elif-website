@@ -558,6 +558,52 @@
                 <div class="modal-body" id="modal-student-body"></div>
             </div>
         </div>
+    <!-- Teacher Mobile Offcanvas Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="teacherNavOffcanvas" aria-labelledby="teacherNavOffcanvasLabel" style="max-width:290px;">
+        <div class="offcanvas-header text-white" style="background:linear-gradient(135deg,#0f510e,#1b9e1b);">
+            <h5 class="offcanvas-title fw-bold" id="teacherNavOffcanvasLabel"><i class="fas fa-chalkboard-teacher me-2"></i>Teacher Menu</h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body p-0">
+            <div class="list-group list-group-flush">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="overview" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-home text-success fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Overview</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="results" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-poll text-primary fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Record Results</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="attendance" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-user-check text-info fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Take Attendance</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="timetable" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-clock text-warning fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">My Timetable</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="exams" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-calendar-alt text-danger fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Exam Schedule</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="students" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-users text-secondary fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Student Directory</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="analytics" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-chart-line text-success fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Class Analytics</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" data-section="profile" onclick="bootstrap.Offcanvas.getInstance(document.getElementById('teacherNavOffcanvas'))?.hide();">
+                    <i class="fas fa-user-tie text-primary fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">My Profile</span>
+                </a>
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3 text-danger" onclick="document.getElementById('logout-btn').click();">
+                    <i class="fas fa-sign-out-alt fs-5" style="width:24px;"></i>
+                    <span class="fw-semibold">Sign Out</span>
+                </a>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
@@ -568,6 +614,18 @@
 
         // === UTILITIES ===
         const $ = id => document.getElementById(id);
+
+        // Bind mobile menu toggle
+        const menuToggle = $('teacher-menu-toggle');
+        if (menuToggle) {
+            menuToggle.addEventListener('click', () => {
+                const offEl = $('teacherNavOffcanvas');
+                if (offEl) {
+                    const bsOff = bootstrap.Offcanvas.getOrCreateInstance(offEl);
+                    bsOff.toggle();
+                }
+            });
+        }
         const $$ = (sel, ctx) => (ctx||document).querySelectorAll(sel);
         const fmtDate = d => d ? new Date(d).toLocaleDateString('en-US',{day:'numeric',month:'short',year:'numeric'}) : '—';
         const fmtTime = t => { if (!t) return '—'; const p=t.split(':'), h=parseInt(p[0]), m=p[1]; return (h%12||12)+':'+m+(h<12?'AM':'PM'); };
