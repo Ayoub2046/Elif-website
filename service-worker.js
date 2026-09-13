@@ -1,4 +1,4 @@
-const CACHE = 'elif-pwa-v2';
+const CACHE = 'elif-pwa-v3';
 const PRECACHE = [
   '/',
   '/HTML/index.html',

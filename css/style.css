@@ -1135,20 +1135,28 @@ body[data-theme="dark"] .stat-card {
     margin-bottom: 0.6rem;
 }
 .podium-avatar {
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid #fff;
-    box-shadow: 0 3px 10px rgba(0,0,0,0.15);
+    width: 64px !important;
+    height: 64px !important;
+    max-width: 64px !important;
+    max-height: 64px !important;
+    border-radius: 50% !important;
+    object-fit: cover !important;
+    background: #ffffff !important;
+    border: 3px solid #cbd5e1 !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    display: block !important;
+    margin: 0 auto !important;
 }
 .podium-card.rank-1 .podium-avatar {
-    width: 76px;
-    height: 76px;
-    border-color: #f1c40f;
+    width: 76px !important;
+    height: 76px !important;
+    max-width: 76px !important;
+    max-height: 76px !important;
+    border-color: #f1c40f !important;
+    box-shadow: 0 6px 16px rgba(241, 196, 15, 0.35) !important;
 }
-.podium-card.rank-2 .podium-avatar { border-color: #94a3b8; }
-.podium-card.rank-3 .podium-avatar { border-color: #d97706; }
+.podium-card.rank-2 .podium-avatar { border-color: #94a3b8 !important; }
+.podium-card.rank-3 .podium-avatar { border-color: #d97706 !important; }
 
 .podium-rank-badge {
     position: absolute;

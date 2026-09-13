@@ -1457,6 +1457,355 @@
         @media (max-height: 500px) and (orientation: landscape) {
             .login-container { padding: 0.5rem; }
         }
+
+        /* =========================================
+            TOP 3 CLASS LEADERS - OLYMPIC PODIUM & CHIPS
+        ========================================= */
+        .class-leaders-card {
+            background: linear-gradient(135deg, #ffffff 0%, #f7fdf7 100%);
+            border: 1px solid #dcf2dc;
+            border-radius: 22px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+            box-shadow: 0 10px 30px rgba(15, 81, 14, 0.08);
+            position: relative;
+            overflow: hidden;
+        }
+        .class-leaders-card::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            right: -50px;
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(29, 217, 29, 0.12), transparent 70%);
+            pointer-events: none;
+        }
+        .leaders-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.2rem;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .leaders-title-group h4 {
+            margin: 0;
+            font-size: 1.15rem;
+            font-weight: 800;
+            color: var(--primary-dark, #0f510e);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .leaders-title-group p {
+            margin: 2px 0 0;
+            font-size: 0.78rem;
+            color: #64748b;
+        }
+
+        /* Podium Grid */
+        .podium-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.1fr 1fr;
+            gap: 12px;
+            align-items: end;
+            padding: 1rem 0.5rem 0;
+        }
+
+        /* Individual Podium Card */
+        .podium-card {
+            background: #fff;
+            border-radius: 18px;
+            padding: 1.2rem 0.8rem 1rem;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.06);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            border: 2px solid transparent;
+        }
+        .podium-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+        }
+
+        /* 1st Place - Gold Champion */
+        .podium-card.rank-1 {
+            border-color: #f1c40f;
+            background: linear-gradient(180deg, #fffcf0 0%, #ffffff 100%);
+            box-shadow: 0 8px 25px rgba(241, 196, 15, 0.22);
+            padding-top: 1.5rem;
+            z-index: 2;
+        }
+        .podium-card.rank-1 .crown-icon {
+            position: absolute;
+            top: -16px;
+            font-size: 1.6rem;
+            color: #f39c12;
+            animation: crownFloat 2.5s ease-in-out infinite;
+        }
+        @keyframes crownFloat {
+            0%, 100% { transform: translateY(0) rotate(-2deg); }
+            50% { transform: translateY(-4px) rotate(2deg); }
+        }
+
+        /* 2nd Place - Silver */
+        .podium-card.rank-2 {
+            border-color: #cbd5e1;
+            background: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+            box-shadow: 0 4px 18px rgba(148, 163, 184, 0.18);
+        }
+
+        /* 3rd Place - Bronze */
+        .podium-card.rank-3 {
+            border-color: #fed7aa;
+            background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+            box-shadow: 0 4px 18px rgba(217, 119, 6, 0.15);
+        }
+
+        /* Avatar with medal ring - strictly constrained to prevent huge logo display */
+        .podium-avatar-wrap {
+            position: relative;
+            margin-bottom: 0.6rem;
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .podium-card.rank-1 .podium-avatar-wrap {
+            width: 76px;
+            height: 76px;
+        }
+        .podium-avatar {
+            width: 64px !important;
+            height: 64px !important;
+            max-width: 64px !important;
+            max-height: 64px !important;
+            border-radius: 50% !important;
+            object-fit: cover !important;
+            background: #ffffff !important;
+            border: 3px solid #cbd5e1 !important;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+            display: block !important;
+            margin: 0 auto !important;
+        }
+        .podium-card.rank-1 .podium-avatar {
+            width: 76px !important;
+            height: 76px !important;
+            max-width: 76px !important;
+            max-height: 76px !important;
+            border-color: #f1c40f !important;
+            box-shadow: 0 6px 16px rgba(241, 196, 15, 0.35) !important;
+        }
+        .podium-card.rank-2 .podium-avatar { border-color: #94a3b8 !important; }
+        .podium-card.rank-3 .podium-avatar { border-color: #d97706 !important; }
+
+        .podium-rank-badge {
+            position: absolute;
+            bottom: -4px;
+            right: -4px;
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.2);
+            border: 2px solid #fff;
+        }
+        .podium-card.rank-1 .podium-rank-badge {
+            width: 30px;
+            height: 30px;
+            font-size: 1.1rem;
+            background: linear-gradient(135deg, #f1c40f, #d4ac0d);
+        }
+        .podium-card.rank-2 .podium-rank-badge { background: linear-gradient(135deg, #94a3b8, #64748b); }
+        .podium-card.rank-3 .podium-rank-badge { background: linear-gradient(135deg, #d97706, #b45309); }
+
+        .podium-student-name {
+            font-weight: 800;
+            font-size: 0.9rem;
+            color: #1e293b;
+            margin-bottom: 2px;
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .podium-card.rank-1 .podium-student-name { font-size: 1.05rem; color: #0f172a; }
+
+        .podium-id-tag {
+            font-size: 0.7rem;
+            color: #64748b;
+            font-weight: 600;
+            background: #f1f5f9;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-bottom: 6px;
+        }
+
+        .podium-score-pill {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 4px 10px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #0f510e;
+            margin-bottom: 8px;
+            white-space: nowrap;
+        }
+        .podium-card.rank-1 .podium-score-pill {
+            background: #fef9c3;
+            border-color: #fde047;
+            color: #854d0e;
+            font-weight: 800;
+        }
+        .podium-card.rank-2 .podium-score-pill { background: #f1f5f9; color: #334155; }
+        .podium-card.rank-3 .podium-score-pill { background: #ffedd5; color: #9a3412; }
+
+        .podium-you-badge {
+            background: linear-gradient(135deg, #0f510e, #1dd91d);
+            color: #fff;
+            font-size: 0.68rem;
+            font-weight: 800;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+            animation: pulseGlow 2s infinite;
+        }
+        @keyframes pulseGlow {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(29, 217, 29, 0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(29, 217, 29, 0); }
+        }
+
+        .podium-pedestal {
+            width: 100%;
+            margin-top: auto;
+            border-radius: 10px;
+            font-weight: 900;
+            font-size: 0.85rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            letter-spacing: 1px;
+        }
+        .podium-card.rank-1 .podium-pedestal {
+            height: 52px;
+            background: linear-gradient(180deg, #fef08a, #facc15);
+            color: #713f12;
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.6);
+        }
+        .podium-card.rank-2 .podium-pedestal {
+            height: 40px;
+            background: linear-gradient(180deg, #e2e8f0, #cbd5e1);
+            color: #334155;
+        }
+        .podium-card.rank-3 .podium-pedestal {
+            height: 30px;
+            background: linear-gradient(180deg, #fed7aa, #fdba74);
+            color: #7c2d12;
+        }
+
+        /* Exam Pills Scroll & Chips */
+        .exam-chips-scroll {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 6px;
+            scrollbar-width: thin;
+        }
+        .exam-chip-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 14px;
+            border-radius: 25px;
+            font-size: 0.82rem;
+            font-weight: 600;
+            border: 1.5px solid #e2e8f0;
+            background: #fff;
+            color: #475569;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+        }
+        .exam-chip-btn:hover {
+            border-color: var(--primary, #1dd91d);
+            color: var(--primary-dark, #0f510e);
+            background: #f0fdf4;
+        }
+        .exam-chip-btn.active {
+            background: var(--primary-dark, #0f510e);
+            border-color: var(--primary-dark, #0f510e);
+            color: #fff;
+            box-shadow: 0 4px 12px rgba(15, 81, 14, 0.25);
+        }
+        .exam-chip-btn .chip-badge {
+            background: rgba(0,0,0,0.08);
+            padding: 2px 7px;
+            border-radius: 12px;
+            font-size: 0.72rem;
+        }
+        .exam-chip-btn.active .chip-badge {
+            background: rgba(255,255,255,0.25);
+            color: #fff;
+        }
+
+        @media (max-width: 600px) {
+            .podium-grid {
+                gap: 6px;
+                padding: 0.5rem 0 0;
+            }
+            .podium-card {
+                padding: 0.8rem 0.4rem 0.6rem;
+                border-radius: 14px;
+            }
+            .podium-avatar-wrap,
+            .podium-avatar { width: 50px !important; height: 50px !important; max-width: 50px !important; max-height: 50px !important; }
+            .podium-card.rank-1 .podium-avatar-wrap,
+            .podium-card.rank-1 .podium-avatar { width: 60px !important; height: 60px !important; max-width: 60px !important; max-height: 60px !important; }
+            .podium-student-name { font-size: 0.75rem; }
+            .podium-card.rank-1 .podium-student-name { font-size: 0.82rem; }
+            .podium-score-pill { font-size: 0.68rem; padding: 2px 6px; }
+            .podium-card.rank-1 .podium-pedestal { height: 44px; }
+            .podium-card.rank-2 .podium-pedestal { height: 34px; }
+            .podium-card.rank-3 .podium-pedestal { height: 26px; }
+        }
+
+        body[data-theme="dark"] .class-leaders-card {
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-color: #334155;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        body[data-theme="dark"] .leaders-title-group h4 { color: #86efac; }
+        body[data-theme="dark"] .podium-card {
+            background: #1e293b;
+            border-color: #334155;
+        }
+        body[data-theme="dark"] .podium-card.rank-1 {
+            background: linear-gradient(180deg, #2d2a17 0%, #1e293b 100%);
+            border-color: #f1c40f;
+        }
+        body[data-theme="dark"] .podium-student-name { color: #f1f5f9; }
+        body[data-theme="dark"] .podium-id-tag { background: #334155; color: #94a3b8; }
+        body[data-theme="dark"] .exam-chip-btn {
+            background: #1e293b;
+            border-color: #334155;
+            color: #cbd5e1;
+        }
+        body[data-theme="dark"] .exam-chip-btn.active {
+            background: var(--primary, #1dd91d);
+            color: #000;
+        }
     </style>
 </head>
 
@@ -1513,7 +1862,7 @@
                     <p class="greeting-date" id="header-date"></p>
                 </div>
                 <div class="header-icons">
-                    <button class="header-icon-btn d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#studentNavOffcanvas" aria-controls="studentNavOffcanvas" title="Navigation Menu">
+                    <button class="header-icon-btn" type="button" onclick="openStudentNav()" title="Navigation Menu" id="btn-toggle-menu">
                         <i class="fas fa-bars"></i>
                     </button>
                     <button class="header-icon-btn" title="Search" onclick="toggleSearch()">
@@ -1603,8 +1952,8 @@
                     <div class="action-icon icon-purple"><i class="fas fa-book-open"></i></div>
                     <span class="action-label">Subjects</span>
                 </button>
-                <button class="action-btn" onclick="switchToTab('subjects'); window.scrollTo({top:0,behavior:'smooth'});">
-                    <div class="action-icon icon-orange-light"><i class="fas fa-ellipsis-h"></i></div>
+                <button class="action-btn" onclick="openStudentNav()" title="Navigation Menu">
+                    <div class="action-icon icon-orange-light"><i class="fas fa-bars"></i></div>
                     <span class="action-label">More</span>
                 </button>
                 <button class="action-btn" id="btn-logout">
@@ -1969,30 +2318,6 @@
         </div>
     </div>
 
-    <!-- Bottom Navigation -->
-    <nav class="bottom-nav d-none" id="bottom-nav">
-        <button class="nav-item active" data-bottom-tab="home">
-            <i class="fas fa-home"></i>
-            <span>Home</span>
-        </button>
-        <button class="nav-item" data-bottom-tab="results">
-            <i class="fas fa-chart-bar"></i>
-            <span>Results</span>
-        </button>
-        <button class="nav-item" data-bottom-tab="timetable">
-            <i class="fas fa-calendar-alt"></i>
-            <span>Schedule</span>
-        </button>
-        <button class="nav-item" data-bottom-tab="analytics">
-            <i class="fas fa-chart-pie"></i>
-            <span>Analytics</span>
-        </button>
-        <button class="nav-item" data-bottom-tab="more">
-            <i class="fas fa-bars"></i>
-            <span>More</span>
-        </button>
-    </nav>
-
     <!-- Notification Modal -->
     <div class="modal fade" id="notificationModal" tabindex="-1">
         <div class="modal-dialog modal-dialog-centered">
@@ -2061,47 +2386,47 @@
         </div>
     </div>
 
-    <!-- Student Mobile Offcanvas Navigation Menu -->
-    <div class="offcanvas offcanvas-start" tabindex="-1" id="studentNavOffcanvas" aria-labelledby="studentNavOffcanvasLabel" style="max-width:280px;">
+    <!-- Student Offcanvas Navigation Menu -->
+    <div class="offcanvas offcanvas-start" tabindex="-1" id="studentNavOffcanvas" aria-labelledby="studentNavOffcanvasLabel" style="max-width:280px; z-index:1060;">
         <div class="offcanvas-header text-white" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary-light));">
             <h5 class="offcanvas-title fw-bold" id="studentNavOffcanvasLabel"><i class="fas fa-graduation-cap me-2"></i>Student Portal</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <button type="button" class="btn-close btn-close-white" onclick="closeStudentNav()" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body p-0">
             <div class="list-group list-group-flush">
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('results'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('results'); closeStudentNav();">
                     <i class="fas fa-poll text-success fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Exam Results & Honor Roll</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('timetable'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('timetable'); closeStudentNav();">
                     <i class="fas fa-clock text-primary fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Timetable & Classes</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('exams'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('exams'); closeStudentNav();">
                     <i class="fas fa-file-alt text-warning fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Exam Schedule</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('attendance'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('attendance'); closeStudentNav();">
                     <i class="fas fa-user-check text-info fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Attendance Record</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('analytics'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('analytics'); closeStudentNav();">
                     <i class="fas fa-chart-pie fs-5" style="width:24px;color:#7c3aed;"></i>
                     <span class="fw-semibold">Academic Analytics</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="openDigitalId(); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="openDigitalId(); closeStudentNav();">
                     <i class="fas fa-id-card text-danger fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Digital ID Card</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('clearance'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('clearance'); closeStudentNav();">
                     <i class="fas fa-check-circle text-success fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Exam Clearance</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('subjects'); bootstrap.Offcanvas.getInstance(document.getElementById('studentNavOffcanvas'))?.hide();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3" onclick="switchToTab('subjects'); closeStudentNav();">
                     <i class="fas fa-book-open text-secondary fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Registered Subjects</span>
                 </a>
-                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3 text-danger" onclick="document.getElementById('btn-logout').click();">
+                <a href="javascript:void(0)" class="list-group-item list-group-item-action py-3 d-flex align-items-center gap-3 text-danger" onclick="closeStudentNav(); document.getElementById('btn-logout').click();">
                     <i class="fas fa-sign-out-alt fs-5" style="width:24px;"></i>
                     <span class="fw-semibold">Sign Out</span>
                 </a>
@@ -2127,9 +2452,9 @@
             <i class="fas fa-file-alt"></i>
             <span>Exams</span>
         </button>
-        <button type="button" class="nav-item" data-bottom-tab="more">
-            <i class="fas fa-th-large"></i>
-            <span>More</span>
+        <button type="button" class="nav-item" data-bottom-tab="more" onclick="openStudentNav()">
+            <i class="fas fa-bars"></i>
+            <span>Menu</span>
         </button>
     </nav>
 
@@ -2280,6 +2605,34 @@
                 if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
             };
 
+            window.openStudentNav = function () {
+                var offEl = document.getElementById('studentNavOffcanvas');
+                if (!offEl) return;
+                try {
+                    var oc = bootstrap.Offcanvas.getOrCreateInstance(offEl);
+                    oc.show();
+                } catch (e) {
+                    offEl.classList.add('show');
+                    offEl.style.visibility = 'visible';
+                }
+            };
+
+            window.closeStudentNav = function () {
+                var offEl = document.getElementById('studentNavOffcanvas');
+                if (!offEl) return;
+                try {
+                    var oc = bootstrap.Offcanvas.getInstance(offEl);
+                    if (oc) oc.hide();
+                    else {
+                        offEl.classList.remove('show');
+                        offEl.style.visibility = 'hidden';
+                    }
+                } catch (e) {
+                    offEl.classList.remove('show');
+                    offEl.style.visibility = 'hidden';
+                }
+            };
+
             // ========== BOTTOM NAV ==========
 
             function initBottomNav() {
@@ -2300,11 +2653,7 @@
                             if (firstTab) firstTab.classList.add('active');
                             if (resultsPane) resultsPane.scrollIntoView({ behavior: 'smooth', block: 'start' });
                         } else if (tab === 'more') {
-                            var offEl = document.getElementById('studentNavOffcanvas');
-                            if (offEl) {
-                                var oc = bootstrap.Offcanvas.getInstance(offEl) || new bootstrap.Offcanvas(offEl);
-                                oc.toggle();
-                            }
+                            openStudentNav();
                         } else {
                             if (tab === 'analytics') {
                                 switchToTab('analytics');
@@ -2314,21 +2663,6 @@
                             }
                         }
                     });
-                });
-
-                // Explicit handler for mobile header offcanvas toggle button
-                document.querySelectorAll('[data-bs-target="#studentNavOffcanvas"]').forEach(function(btn) {
-                    if (!btn.dataset.boundOffcanvas) {
-                        btn.dataset.boundOffcanvas = 'true';
-                        btn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            var offEl = document.getElementById('studentNavOffcanvas');
-                            if (offEl) {
-                                var oc = bootstrap.Offcanvas.getOrCreateInstance(offEl);
-                                oc.toggle();
-                            }
-                        });
-                    }
                 });
             }
 
