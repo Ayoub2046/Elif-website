@@ -12,7 +12,12 @@ router.get('/:studentId', async (req, res) => {
 
     try {
         // 1. Student info
-        const { rows: studentRows } = await query(`SELECT * FROM students WHERE id = $1`, [studentId]);
+        const { rows: studentRows } = await query(`
+            SELECT *,
+                   TO_CHAR(birthdate, 'YYYY-MM-DD') AS birthdate_clean,
+                   TO_CHAR(enrollmentdate, 'YYYY-MM-DD') AS enrollmentdate_clean
+            FROM students WHERE id = $1
+        `, [studentId]);
         const student = studentRows[0];
         if (!student) return res.status(404).json({ error: 'Student not found' });
 
@@ -258,8 +263,8 @@ router.get('/:studentId', async (req, res) => {
                 grade: student.grade,
                 department: student.department || '--',
                 period: student.period || '--',
-                enrollmentdate: student.enrollmentdate,
-                birthdate: student.birthdate,
+                enrollmentdate: student.enrollmentdate_clean || student.enrollmentdate,
+                birthdate: student.birthdate_clean || student.birthdate,
                 gpa: student.gpa,
                 remarks: student.remarks
             },

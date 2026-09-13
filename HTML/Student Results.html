@@ -7,6 +7,7 @@
     <title>Student Dashboard - Elif PU College</title>
     <link rel="icon" type="image/png" href="/images/ALIF.png">
     <link rel="manifest" href="/manifest.json">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Elif Student">
@@ -2185,6 +2186,9 @@
 
             function formatBirthdate(dateStr) {
                 if (!dateStr) return '';
+                if (typeof dateStr === 'string' && /^\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+                    return dateStr.substring(0, 10);
+                }
                 var d = new Date(dateStr);
                 if (isNaN(d.getTime())) return '';
                 var year = d.getFullYear();
@@ -2218,10 +2222,13 @@
             }
 
             function parseElpId(input) {
-                var cleaned = input.trim().toUpperCase().replace('ELP', '');
+                if (!input) return null;
+                var cleaned = String(input).trim().toUpperCase().replace(/^(ELP|SA)/i, '');
                 var num = parseInt(cleaned, 10);
                 if (isNaN(num)) return null;
-                return num - 250000;
+                if (num > 250000) return num - 250000;
+                if (num > 0) return num;
+                return null;
             }
 
             function getAttendanceBadgeClass(status) {
@@ -2305,6 +2312,8 @@
                             } else {
                                 switchToTab(tab);
                             }
+                        }
+                    });
                 });
 
                 // Explicit handler for mobile header offcanvas toggle button
@@ -2405,7 +2414,8 @@
                     var data = await response.json();
 
                     var dbBirthdate = formatBirthdate(data.student.birthdate);
-                    if (dbBirthdate !== passwordInput) {
+                    var dbEnrollment = formatBirthdate(data.student.enrollmentdate);
+                    if (dbBirthdate !== passwordInput && dbEnrollment !== passwordInput) {
                         throw new Error('WRONG_PASSWORD');
                     }
 
@@ -3511,9 +3521,37 @@
                         var parsed = JSON.parse(stored);
                         if (parsed.data && parsed.data.student) {
                             loadDashboard(parsed.data);
+                            return;
                         }
                     } catch (e) {
                         sessionStorage.removeItem(STORAGE_KEY);
+                    }
+                }
+
+                // Support direct launch from admin panel (via viewingStudentId)
+                var viewingStudentId = sessionStorage.getItem('viewingStudentId');
+                if (viewingStudentId) {
+                    var realId = parseElpId(viewingStudentId);
+                    if (realId && realId > 0) {
+                        showLoading();
+                        fetch(API_BASE + '/' + realId)
+                            .then(function (res) {
+                                if (!res.ok) throw new Error('Not found');
+                                return res.json();
+                            })
+                            .then(function (data) {
+                                hideLoading();
+                                sessionStorage.setItem(STORAGE_KEY, JSON.stringify({
+                                    dbId: realId,
+                                    elpId: 'ELP' + (250000 + realId),
+                                    data: data
+                                }));
+                                loadDashboard(data);
+                            })
+                            .catch(function () {
+                                hideLoading();
+                                sessionStorage.removeItem('viewingStudentId');
+                            });
                     }
                 }
             }
