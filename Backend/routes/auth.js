@@ -39,7 +39,7 @@ router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
     try {
-        const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [email]);
+        const { rows } = await query(`SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND role IS NOT NULL AND role != ''`, [email]);
         const user = rows[0];
         if (!user) return res.status(401).json({ message: 'Invalid credentials.' });
 
@@ -49,11 +49,11 @@ router.post('/login', async (req, res) => {
         }
 
         const match = await bcrypt.compare(password, user.password);
-        if (match) return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+        if (match) return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, subject: user.subject } });
         if (password === user.password) {
             const hashedPassword = await bcrypt.hash(password, 10);
             await query(`UPDATE users SET password = $1 WHERE id = $2`, [hashedPassword, user.id]);
-            return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role } });
+            return res.json({ user: { id: user.id, name: user.name, email: user.email, role: user.role, subject: user.subject } });
         }
         return res.status(401).json({ message: 'Invalid credentials.' });
     } catch (err) {
@@ -66,7 +66,7 @@ router.post('/resend-verification', async (req, res) => {
     const { email } = req.body;
     if (!email) return res.status(400).json({ error: 'Email is required.' });
     try {
-        const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [email]);
+        const { rows } = await query(`SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND role IS NOT NULL AND role != ''`, [email]);
         const user = rows[0];
         if (!user) return res.status(200).json({ message: 'If an account with that email exists, a verification link will be sent.' });
         if (user.isactive !== false) {
@@ -85,12 +85,12 @@ router.post('/resend-verification', async (req, res) => {
 router.post('/forgot', async (req, res) => {
     const { email } = req.body;
     try {
-        const { rows } = await query(`SELECT * FROM users WHERE email = $1`, [email]);
+        const { rows } = await query(`SELECT * FROM users WHERE LOWER(email) = LOWER($1) AND role IS NOT NULL AND role != ''`, [email]);
         const user = rows[0];
         if (!user) return res.status(200).json({ message: 'If an account with that email exists, a link will be sent.' });
         const token = crypto.randomBytes(20).toString('hex');
         const expires = Date.now() + 3600000;
-        await query(`UPDATE users SET resetpasswordtoken = $1, resetpasswordexpires = $2 WHERE email = $3`, [token, expires, email]);
+        await query(`UPDATE users SET resetpasswordtoken = $1, resetpasswordexpires = $2 WHERE LOWER(email) = LOWER($3)`, [token, expires, email]);
         const resetLink = `http://localhost:3000/HTML/reset-password.html?token=${token}`;
         return res.json({ message: 'Reset link generated.', resetLink });
     } catch (err) {

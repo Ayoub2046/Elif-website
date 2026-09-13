@@ -36,15 +36,18 @@ router.get('/dashboard-details', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Teacher email required.' });
     try {
         const { rows: teacherRows } = await query(
-            `SELECT * FROM users WHERE email = $1 AND role = 'Teacher'`, [email]
+            `SELECT id, name, email, subject, role, image, isactive, created_at
+             FROM users WHERE LOWER(email) = LOWER($1) AND role = 'Teacher'`, [email]
         );
         const teacher = teacherRows[0];
         if (!teacher) return res.status(404).json({ error: 'Teacher account not found.' });
 
         const { rows: classes } = await query(
-            `SELECT id, name, room, students FROM classes WHERE teacherid = $1`, [teacher.id]
+            `SELECT c.id, c.name, c.room,
+                    COALESCE((SELECT COUNT(*) FROM class_students cs WHERE cs.class_id = c.id), c.students, 0)::int AS students
+             FROM classes c WHERE c.teacherid = $1 AND c.deleted_at IS NULL`, [teacher.id]
         );
-        const totalStudents = classes.reduce((sum, c) => sum + (c.students || 0), 0);
+        const totalStudents = classes.reduce((sum, c) => sum + (parseInt(c.students) || 0), 0);
         res.json({ ...teacher, classes: classes || [], totalStudents });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -57,7 +60,7 @@ router.get('/classes', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Teacher email required.' });
     try {
         const { rows: teacherRows } = await query(
-            `SELECT id FROM users WHERE email = $1 AND role = 'Teacher'`, [email]
+            `SELECT id FROM users WHERE LOWER(email) = LOWER($1) AND role = 'Teacher'`, [email]
         );
         if (!teacherRows[0]) return res.status(404).json({ error: 'Teacher not found.' });
         

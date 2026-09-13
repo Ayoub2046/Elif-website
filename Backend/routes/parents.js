@@ -7,7 +7,7 @@ router.get('/dashboard-details', async (req, res) => {
     if (!email) return res.status(400).json({ error: 'Parent email is required.' });
 
     try {
-        const { rows: parentRows } = await query(`SELECT id, name FROM users WHERE email = $1`, [email]);
+        const { rows: parentRows } = await query(`SELECT id, name FROM users WHERE LOWER(email) = LOWER($1) AND role IS NOT NULL AND role != ''`, [email]);
         const parent = parentRows[0];
         if (!parent) return res.status(404).json({ error: 'Parent account not found' });
 
