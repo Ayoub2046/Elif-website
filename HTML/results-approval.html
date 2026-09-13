@@ -196,23 +196,36 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let loadResults;
         document.addEventListener('DOMContentLoaded', () => {
             const RESULTS_API = '/api/results';
             let allResults = [];
             let holdModal = null;
 
-            async function loadResults() {
+            loadResults = async function() {
+                const tbody = document.getElementById('results-table-body');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading results...</td></tr>`;
+                }
                 try {
                     const response = await fetch(RESULTS_API);
-                    if (!response.ok) throw new Error('Failed to load results');
+                    if (!response.ok) throw new Error(`Results API error (${response.status})`);
                     allResults = await response.json();
                     updateSummaryCards();
                     renderTable();
                 } catch (error) {
-                    document.getElementById('results-table-body').innerHTML = 
-                        `<tr><td colspan="8" class="text-center text-danger">Error loading results.</td></tr>`;
+                    console.error('Error loading results:', error);
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr><td colspan="10" class="text-center py-4">
+                                <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2 d-block"></i>
+                                <span class="text-danger d-block mb-2">Error loading results: ${error.message}</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="loadResults()"><i class="fas fa-redo me-1"></i> Try Again</button>
+                            </td></tr>`;
+                    }
                 }
-            }
+            };
+            window.loadResults = loadResults;
 
             function updateSummaryCards() {
                 const pending = allResults.filter(r => r.approval_status === 'pending').length;
@@ -230,7 +243,10 @@
                 if (filter !== 'all') filtered = allResults.filter(r => r.approval_status === filter);
 
                 if (filtered.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="10" class="text-center text-muted">No results found.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" class="text-center py-5 text-muted">
+                        <i class="fas fa-poll fa-3x mb-2 d-block text-secondary"></i>
+                        <p class="mb-0">No exam results found.</p>
+                    </td></tr>`;
                     return;
                 }
 

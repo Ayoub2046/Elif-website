@@ -350,20 +350,24 @@
         }
 
         async function loadHistory(studentId) {
+            const tbody = document.getElementById('history-table-body');
+            const noDataMsg = document.getElementById('no-data-message');
+            if (tbody) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-muted"><div class="spinner-border spinner-border-sm text-success me-2" role="status"></div> Loading attendance records...</td></tr>`;
+            }
+            if (noDataMsg) noDataMsg.classList.add('d-none');
             try {
                 const response = await fetch(`/api/attendance/student/${studentId}/history`);
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const history = await response.json();
 
-                const tbody = document.getElementById('history-table-body');
-                const noDataMsg = document.getElementById('no-data-message');
-
                 if (history.length === 0) {
-                    tbody.innerHTML = '';
-                    noDataMsg.classList.remove('d-none');
+                    if (tbody) tbody.innerHTML = '';
+                    if (noDataMsg) noDataMsg.classList.remove('d-none');
                     return;
                 }
 
-                noDataMsg.classList.add('d-none');
+                if (noDataMsg) noDataMsg.classList.add('d-none');
                 tbody.innerHTML = history.map((record, index) => {
                     const date = new Date(record.date);
                     const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
@@ -389,8 +393,12 @@
                 }).join('');
             } catch (error) {
                 console.error('Error loading history:', error);
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle text-warning me-2"></i>Error loading attendance records. <button class="btn btn-sm btn-outline-success ms-2" onclick="loadHistory(${studentId})"><i class="fas fa-redo me-1"></i> Retry</button></td></tr>`;
+                }
             }
         }
+        window.loadHistory = loadHistory;
     </script>
 
     <script src="/JS/pwa.js"></script>

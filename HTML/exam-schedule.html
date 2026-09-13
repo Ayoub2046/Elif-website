@@ -293,6 +293,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let loadClasses;
+        let loadExams;
         document.addEventListener('DOMContentLoaded', () => {
             const examModal = new bootstrap.Modal(document.getElementById('examModal'));
             const examForm = document.getElementById('examForm');
@@ -323,10 +325,11 @@
             }
 
             // --- Fetch Classes ---
-            async function loadClasses() {
+            loadClasses = async function() {
+                classSelector.innerHTML = '<option value="" disabled selected>Loading classes...</option>';
                 try {
                     const res = await fetch('/api/classes');
-                    if (!res.ok) throw new Error('Failed to load classes');
+                    if (!res.ok) throw new Error(`Classes API error (${res.status})`);
                     classes = await res.json();
                     classSelector.innerHTML = '<option value="" disabled selected>Choose a class...</option>';
                     classes.forEach(c => {
@@ -334,23 +337,38 @@
                     });
                 } catch (error) {
                     console.error('Error loading classes:', error);
+                    classSelector.innerHTML = '<option value="" disabled selected>Error loading classes</option>';
+                    examCardsContainer.innerHTML =
+                        `<div class="empty-state">
+                            <i class="fas fa-exclamation-triangle d-block text-warning mb-2"></i>
+                            <p class="text-danger mb-2">Error loading classes: ${error.message}</p>
+                            <button class="btn btn-sm btn-outline-success" onclick="loadClasses()"><i class="fas fa-redo me-1"></i> Retry</button>
+                        </div>`;
                 }
-            }
+            };
+            window.loadClasses = loadClasses;
 
             // --- Fetch Exams for selected class ---
-            async function loadExams(classId) {
+            loadExams = async function(classId) {
+                examCardsContainer.innerHTML =
+                    `<div class="text-center py-5"><div class="spinner-border text-success" role="status"></div><p class="mt-2 text-muted">Loading exams...</p></div>`;
                 try {
                     const res = await fetch(`/api/exam-schedules/class/${classId}`);
-                    if (!res.ok) throw new Error('Failed to load exams');
+                    if (!res.ok) throw new Error(`Exams API error (${res.status})`);
                     exams = await res.json();
                     renderExamCards();
                     updateSummaryCards();
                 } catch (error) {
                     console.error('Error loading exams:', error);
                     examCardsContainer.innerHTML =
-                        `<div class="empty-state"><i class="fas fa-exclamation-triangle d-block"></i><p class="text-danger">Error loading exam data.</p></div>`;
+                        `<div class="empty-state">
+                            <i class="fas fa-exclamation-triangle d-block text-warning mb-2"></i>
+                            <p class="text-danger mb-2">Error loading exam data: ${error.message}</p>
+                            <button class="btn btn-sm btn-outline-success" onclick="loadExams('${classId}')"><i class="fas fa-redo me-1"></i> Retry</button>
+                        </div>`;
                 }
-            }
+            };
+            window.loadExams = loadExams;
 
             // --- Render Exam Cards ---
             function renderExamCards() {

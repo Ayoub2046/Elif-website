@@ -168,14 +168,16 @@
             }
 
             async function fetchStudents() {
+                const tbody = document.getElementById('student-table-body');
+                tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4"><div class="spinner-border spinner-border-sm text-success" role="status"></div> Loading students...</td></tr>`;
                 try {
                     const response = await fetch(API_URL);
-                    if (!response.ok) throw new Error('Failed to fetch');
+                    if (!response.ok) throw new Error(`Server error ${response.status}`);
                     students = await response.json();
                     renderStudents();
                 } catch (error) {
                     console.error('Fetch Error:', error);
-                    document.getElementById('student-table-body').innerHTML = `<tr><td colspan="7" class="text-center text-danger">Error loading data.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="7" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Could not load students. <button class="btn btn-sm btn-outline-success ms-2" onclick="fetchStudents()"><i class="fas fa-redo me-1"></i>Retry</button></td></tr>`;
                 }
             }
 

@@ -172,14 +172,16 @@
 
             // --- Core Functions ---
             async function fetchUsers() {
+                const tbody = document.getElementById('user-table-body');
+                tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-success" role="status"></div> Loading users...</td></tr>`;
                 try {
                     const response = await fetch(API_URL);
-                    if (!response.ok) throw new Error('Failed to fetch users');
+                    if (!response.ok) throw new Error(`Server error ${response.status}`);
                     users = await response.json();
-                    renderUserTable(roleFilter.value); // Apply current filter after fetching
+                    renderUserTable(roleFilter.value);
                 } catch (error) {
                     console.error('Error:', error);
-                    document.getElementById('user-table-body').innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error loading user data.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Could not load users. <button class="btn btn-sm btn-outline-success ms-2" onclick="fetchUsers()"><i class="fas fa-redo me-1"></i>Retry</button></td></tr>`;
                 }
             }
 

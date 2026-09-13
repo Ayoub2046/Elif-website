@@ -123,15 +123,16 @@
                     saveBtn.disabled = true;
                     return;
                 }
+                tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-success" role="status"></div> Loading attendance...</td></tr>`;
                 try {
                     const response = await fetch(`${API_URL}/${date}`);
-                    if (!response.ok) throw new Error('Failed to fetch data');
+                    if (!response.ok) throw new Error(`Server error ${response.status}`);
                     const students = await response.json();
                     renderTable(students);
                     saveBtn.disabled = students.length === 0;
                 } catch (error) {
                     console.error("Fetch Error:", error);
-                    tbody.innerHTML = `<tr><td colspan="3" class="text-center text-danger">Error loading data.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="3" class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Could not load data. <button class="btn btn-sm btn-outline-success ms-2" onclick="fetchAttendanceForDate(datePicker.value)"><i class="fas fa-redo me-1"></i>Retry</button></td></tr>`;
                     saveBtn.disabled = true;
                 }
             }

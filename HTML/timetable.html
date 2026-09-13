@@ -251,6 +251,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let loadClasses;
+        let loadTimetable;
         document.addEventListener('DOMContentLoaded', () => {
             const timetableModal = new bootstrap.Modal(document.getElementById('timetableModal'));
             const timetableForm = document.getElementById('timetableForm');
@@ -269,10 +271,12 @@
             const DAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
             const DAY_ORDER = { 'Monday': 1, 'Tuesday': 2, 'Wednesday': 3, 'Thursday': 4, 'Friday': 5 };
 
-            async function loadClasses() {
+            loadClasses = async function() {
+                classSelect.innerHTML = '<option value="" disabled selected>Loading classes...</option>';
+                modalClassSelect.innerHTML = '<option value="" disabled selected>Loading classes...</option>';
                 try {
                     const response = await fetch(CLASSES_API_URL);
-                    if (!response.ok) throw new Error('Failed to load classes');
+                    if (!response.ok) throw new Error(`Classes API error (${response.status})`);
                     classes = await response.json();
 
                     classSelect.innerHTML = '<option value="" disabled selected>Select a class...</option>';
@@ -291,27 +295,44 @@
                 } catch (error) {
                     console.error('Error loading classes:', error);
                     classSelect.innerHTML = '<option value="" disabled selected>Error loading classes</option>';
+                    timetableContainer.innerHTML = `
+                        <div class="no-data-message">
+                            <i class="fas fa-exclamation-triangle d-block text-warning mb-2"></i>
+                            <p class="text-danger mb-2">Could not load classes: ${error.message}</p>
+                            <button class="btn btn-sm btn-outline-success" onclick="loadClasses()"><i class="fas fa-redo me-1"></i> Retry</button>
+                        </div>`;
                 }
-            }
+            };
+            window.loadClasses = loadClasses;
 
-            async function loadTimetable(classId) {
+            loadTimetable = async function(classId) {
                 if (!classId) return;
                 selectedClassId = classId;
 
                 const className = classes.find(c => c.id == classId)?.name || '';
                 timetableTitle.textContent = `Weekly Timetable - ${className}`;
+                timetableContainer.innerHTML = `
+                    <div class="text-center py-5">
+                        <div class="spinner-border text-success" role="status"></div>
+                        <p class="mt-2 text-muted">Loading timetable...</p>
+                    </div>`;
 
                 try {
                     const response = await fetch(`${TIMETABLE_API_URL}/class/${classId}`);
-                    if (!response.ok) throw new Error('Failed to load timetable');
+                    if (!response.ok) throw new Error(`Timetable API error (${response.status})`);
                     currentTimetable = await response.json();
                     renderTimetable();
                 } catch (error) {
                     console.error('Error loading timetable:', error);
-                    currentTimetable = [];
-                    renderTimetable();
+                    timetableContainer.innerHTML = `
+                        <div class="no-data-message">
+                            <i class="fas fa-exclamation-triangle d-block text-warning mb-2"></i>
+                            <p class="text-danger mb-2">Could not load timetable: ${error.message}</p>
+                            <button class="btn btn-sm btn-outline-success" onclick="loadTimetable('${classId}')"><i class="fas fa-redo me-1"></i> Retry</button>
+                        </div>`;
                 }
-            }
+            };
+            window.loadTimetable = loadTimetable;
 
             function renderTimetable() {
                 if (!selectedClassId) {

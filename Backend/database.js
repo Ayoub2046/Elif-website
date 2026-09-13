@@ -7,14 +7,18 @@ const { Pool } = require('pg');
 const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false },
-    max: 4, // Keep well below Supabase 15-client session mode limit
-    idleTimeoutMillis: 3000, // Quickly return idle clients to Supabase
-    connectionTimeoutMillis: 10000,
+    max: 2,                        // Very conservative: prevents EMAXCONNSESSION on Supabase session mode
+    min: 0,                        // Don't hold idle connections
+    idleTimeoutMillis: 2000,       // Release idle connections quickly back to Supabase
+    connectionTimeoutMillis: 15000, // Wait up to 15s for a free slot before failing
     allowExitOnIdle: true
 });
 
 pool.on('error', (err) => {
-    console.warn('Supabase pool idle client notice:', err.message);
+    // Swallow non-critical idle client errors silently
+    if (!err.message.includes('terminated') && !err.message.includes('timeout')) {
+        console.warn('Supabase pool error:', err.message);
+    }
 });
 
 pool.connect((err, client, release) => {
@@ -26,7 +30,7 @@ pool.connect((err, client, release) => {
     }
 });
 
-// Robust query helper with automatic exponential retry on dropped connection or EMAXCONNSESSION
+// Robust query helper with automatic exponential backoff retry
 const query = async (text, params, retryCount = 0) => {
     try {
         return await pool.query(text, params);
@@ -37,10 +41,12 @@ const query = async (text, params, retryCount = 0) => {
                             msg.includes('closed') ||
                             msg.includes('ECONNRESET') ||
                             msg.includes('EMAXCONNSESSION') ||
-                            msg.includes('max clients reached');
-        if (isTransient && retryCount < 3) {
-            const delay = (retryCount + 1) * 400;
-            console.warn(`Supabase pool notice: ${msg}. Retrying query in ${delay}ms (attempt ${retryCount + 1}/3)...`);
+                            msg.includes('max clients reached') ||
+                            msg.includes('Connection') ||
+                            msg.includes('connect');
+        if (isTransient && retryCount < 4) {
+            const delay = Math.pow(2, retryCount) * 500; // 500ms, 1s, 2s, 4s
+            console.warn(`DB retry [${retryCount + 1}/4] in ${delay}ms: ${msg.substring(0, 80)}`);
             await new Promise(r => setTimeout(r, delay));
             return await query(text, params, retryCount + 1);
         }

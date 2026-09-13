@@ -191,6 +191,8 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let loadPageData;
+
         document.addEventListener('DOMContentLoaded', () => {
             const clearanceModal = new bootstrap.Modal(document.getElementById('clearanceModal'));
             const clearanceForm = document.getElementById('clearanceForm');
@@ -201,24 +203,35 @@
             let clearances = [];
             let students = [];
 
-            async function loadPageData() {
+            loadPageData = async function() {
+                const tbody = document.getElementById('clearance-table-body');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4"><div class="spinner-border spinner-border-sm text-success me-2" role="status"></div> Loading clearance data...</td></tr>`;
+                }
                 try {
-                    const [clearRes, studRes] = await Promise.all([
-                        fetch(CLEARANCE_API),
-                        fetch(STUDENTS_API)
-                    ]);
-                    if (!clearRes.ok || !studRes.ok) throw new Error('Failed to load data');
-
+                    const clearRes = await fetch(CLEARANCE_API);
+                    if (!clearRes.ok) throw new Error(`Clearance API error (${clearRes.status})`);
                     clearances = await clearRes.json();
+
+                    const studRes = await fetch(STUDENTS_API);
+                    if (!studRes.ok) throw new Error(`Students API error (${studRes.status})`);
                     students = await studRes.json();
 
                     updateSummaryCards();
                     renderTable();
                 } catch (error) {
-                    document.getElementById('clearance-table-body').innerHTML =
-                        `<tr><td colspan="8" class="text-center text-danger">Error loading clearance data.</td></tr>`;
+                    console.error('Error loading clearance data:', error);
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr><td colspan="8" class="text-center py-4">
+                                <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2 d-block"></i>
+                                <span class="text-danger d-block mb-2">Error loading clearance data: ${error.message}</span>
+                                <button class="btn btn-sm btn-outline-success" onclick="loadPageData()"><i class="fas fa-redo me-1"></i> Try Again</button>
+                            </td></tr>`;
+                    }
                 }
-            }
+            };
+            window.loadPageData = loadPageData;
 
             function updateSummaryCards() {
                 const cleared = clearances.filter(c => c.is_cleared === true).length;
@@ -235,7 +248,10 @@
                 if (filter === 'revoked') filtered = clearances.filter(c => c.is_cleared === false);
 
                 if (filtered.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted">No clearance records found.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="8" class="text-center py-5 text-muted">
+                        <i class="fas fa-clipboard-check fa-3x mb-2 d-block text-secondary"></i>
+                        <p class="mb-0">No clearance records found.</p>
+                    </td></tr>`;
                     return;
                 }
 

@@ -694,9 +694,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     async function loadDashboard() {
+        const dirList = document.getElementById('directory-list');
+        if (dirList && (!allStudents || allStudents.length === 0)) {
+            dirList.innerHTML = '<div class="text-center py-4"><div class="spinner-border spinner-border-sm text-success me-2" role="status"></div><span class="text-muted">Loading dashboard data...</span></div>';
+        }
         try {
             const res = await fetch('/api/dashboard/summary');
-            if (!res.ok) throw new Error('Server error');
+            if (!res.ok) throw new Error(`Dashboard API error (${res.status})`);
             const data = await res.json();
 
             document.getElementById('total-students-display').textContent = data.totalStudents;
@@ -715,12 +719,20 @@ document.addEventListener('DOMContentLoaded', () => {
             renderAlerts(data);
 
             const actRes = await fetch('/api/dashboard/activities');
-                    if (actRes.ok) { const actData = await actRes.json(); renderActivity(actData); }
+            if (actRes.ok) { const actData = await actRes.json(); renderActivity(actData); }
         } catch (err) {
             console.error('Dashboard load error:', err);
-            document.getElementById('directory-list').innerHTML = '<div class="text-center py-4 text-danger"><i class="fas fa-exclamation-triangle me-2"></i>Error loading data.</div>';
+            if (dirList) {
+                dirList.innerHTML = `
+                    <div class="text-center py-4 text-danger">
+                        <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2 d-block"></i>
+                        <span class="d-block mb-2">Error loading dashboard: ${err.message}</span>
+                        <button class="btn btn-sm btn-outline-success" onclick="loadDashboard()"><i class="fas fa-redo me-1"></i> Retry</button>
+                    </div>`;
+            }
         }
     }
+    window.loadDashboard = loadDashboard;
 
     searchInput.addEventListener('input', () => {
         const term = searchInput.value.toLowerCase().trim();

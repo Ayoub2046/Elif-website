@@ -130,6 +130,7 @@
     <script src="/JS/admin.js"></script> <!-- Shared JS for sidebar and logout -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        let fetchStudents;
         document.addEventListener('DOMContentLoaded', () => {
             // --- Page Globals ---
             const resultsModal = new bootstrap.Modal(document.getElementById('resultsModal'));
@@ -168,19 +169,39 @@
             }
 
             // --- Core Functions ---
-            async function fetchStudents() {
+            fetchStudents = async function() {
+                const tbody = document.getElementById('students-results-tbody');
+                if (tbody) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading student list...</td></tr>`;
+                }
                 try {
                     const response = await fetch(STUDENTS_API_URL);
-                    if (!response.ok) throw new Error('Failed to load students');
+                    if (!response.ok) throw new Error(`Students API error (${response.status})`);
                     students = await response.json();
                     renderTable();
                 } catch (error) {
-                    document.getElementById('students-results-tbody').innerHTML = `<tr><td colspan="5" class="text-center text-danger">Error loading student list.</td></tr>`;
+                    console.error('Error loading student list:', error);
+                    if (tbody) {
+                        tbody.innerHTML = `
+                            <tr><td colspan="5" class="text-center py-4">
+                                <i class="fas fa-exclamation-triangle text-warning fa-2x mb-2 d-block"></i>
+                                <span class="text-danger d-block mb-2">Error loading student list: ${error.message}</span>
+                                <button class="btn btn-sm btn-outline-primary" onclick="fetchStudents()"><i class="fas fa-redo me-1"></i> Try Again</button>
+                            </td></tr>`;
+                    }
                 }
-            }
+            };
+            window.fetchStudents = fetchStudents;
 
             function renderTable() {
                 const tbody = document.getElementById('students-results-tbody');
+                if (!students || students.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" class="text-center py-5 text-muted">
+                        <i class="fas fa-user-graduate fa-3x mb-2 d-block text-secondary"></i>
+                        <p class="mb-0">No students found.</p>
+                    </td></tr>`;
+                    return;
+                }
                 tbody.innerHTML = students.map(student => `
                 <tr>
                     <td>ELP${student.id}</td>

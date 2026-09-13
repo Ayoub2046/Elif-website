@@ -362,12 +362,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingNewsId = null;
 
     async function fetchNews() {
+        newsTbody.innerHTML = '<tr><td colspan="4" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading articles...</td></tr>';
         try {
             const res = await fetch(NEWS_API);
             if (!res.ok) throw new Error('Server returned ' + res.status);
             const articles = await res.json();
             if (articles.length === 0) {
-                newsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-3">No articles published yet.</td></tr>';
+                newsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4"><i class="fas fa-newspaper fa-2x mb-2 d-block text-secondary"></i>No articles published yet.</td></tr>';
                 return;
             }
             newsTbody.innerHTML = articles.map(a =>
@@ -380,9 +381,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ).join('');
         } catch (e) {
             console.error(e);
-            newsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-3">Error loading articles: ' + e.message + '</td></tr>';
+            newsTbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle text-warning fa-2x mb-2 d-block"></i><span class="d-block mb-2">Error loading articles: ' + e.message + '</span><button class="btn btn-sm btn-outline-primary" onclick="fetchNews()"><i class="fas fa-redo me-1"></i> Retry</button></td></tr>';
         }
     }
+    window.fetchNews = fetchNews;
 
     function resetNewsForm() {
         editingNewsId = null;
@@ -462,12 +464,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let editingTestimonialId = null;
 
     async function fetchTestimonials() {
+        tTbody.innerHTML = '<tr><td colspan="3" class="text-center py-4"><div class="spinner-border spinner-border-sm text-primary me-2" role="status"></div> Loading testimonials...</td></tr>';
         try {
             const res = await fetch(TESTIMONIALS_API);
             if (!res.ok) throw new Error('Server returned ' + res.status);
             const items = await res.json();
             if (items.length === 0) {
-                tTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-3">No testimonials.</td></tr>';
+                tTbody.innerHTML = '<tr><td colspan="3" class="text-center text-muted py-4"><i class="fas fa-quote-right fa-2x mb-2 d-block text-secondary"></i>No testimonials published yet.</td></tr>';
                 return;
             }
             tTbody.innerHTML = items.map(t =>
@@ -479,9 +482,10 @@ document.addEventListener('DOMContentLoaded', () => {
             ).join('');
         } catch (e) {
             console.error(e);
-            tTbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-3">Error loading testimonials: ' + e.message + '</td></tr>';
+            tTbody.innerHTML = '<tr><td colspan="3" class="text-center text-danger py-4"><i class="fas fa-exclamation-triangle text-warning fa-2x mb-2 d-block"></i><span class="d-block mb-2">Error loading testimonials: ' + e.message + '</span><button class="btn btn-sm btn-outline-primary" onclick="fetchTestimonials()"><i class="fas fa-redo me-1"></i> Retry</button></td></tr>';
         }
     }
+    window.fetchTestimonials = fetchTestimonials;
 
     function resetTestimonialForm() {
         editingTestimonialId = null;
